@@ -1,10 +1,10 @@
 type
-  Decimal = object
-    sign: int
-    value: BigInt
-    exponent: int
+  Decimal* = object
+    sign*: int
+    value*: BigInt
+    exponent*: int
 
-proc newDecimal(number: string): Decimal =
+proc newDecimal*(number: string): Decimal =
   var 
     inputString = number
   if inputString.startsWith("-"):
@@ -21,7 +21,7 @@ proc newDecimal(number: string): Decimal =
     result.value =  initBigInt(components[0] & components[1])
     result.exponent = components[1].len * -1 
     
-proc newDecimal(number: float): Decimal =
+proc newDecimal*(number: float): Decimal =
   var 
     inputString = $number
   if inputString.startsWith("-"):
@@ -38,7 +38,7 @@ proc newDecimal(number: float): Decimal =
     result.value =  initBigInt(components[0] & components[1])
     result.exponent = components[1].len  * -1
 
-proc newDecimal(number: int): Decimal =
+proc newDecimal*(number: int): Decimal =
   if number < 0:
     result.sign = 1
     result.value = initBigInt(number * -1)
@@ -47,8 +47,7 @@ proc newDecimal(number: int): Decimal =
     result.value = initBigInt(number)
   result.exponent = 0
 
-
-proc newDecimal(number: BigInt): Decimal =
+proc newDecimal*(number: BigInt): Decimal =
   if number < 0:
     result.sign = 1
   else:
@@ -56,7 +55,7 @@ proc newDecimal(number: BigInt): Decimal =
   result.value = number
   result.exponent = 0
 
-proc `$`(number: Decimal): string =
+proc `$`*(number: Decimal): string =
   #TODO: make sure to add enough zeros for precision setting so that format + precision is preserved for consistency
   var
     value = $number.value
@@ -87,30 +86,13 @@ proc `^`[T: float|int](base: T; exp: int): T =
       result *= base
     exp = exp shr 1
     base *= base
-
-var t = newDecimal("3.14")
-echo $t
  
-proc `*`(numberA, numberB: Decimal): Decimal =
-  result.exponent = numberA.exponent + numberB.exponent
-  result.sign = numberA.sign xor numberB.sign
-  result.value = numberA.value * numberB.value
+proc `*`(a, b: Decimal): Decimal =
+  result.exponent = a.exponent + b.exponent
+  result.sign = a.sign xor b.sign
+  result.value = a.value * b.value
 
-proc divideInt(a, b: int): Decimal =
-  var
-    quotient = a div b
-    fraction = $((a mod b) / b)
-  fraction = fraction[1..fraction.high]
-  result = newDecimal($quotient & $fraction)
-
-proc divideInt(a, b: BigInt): Decimal =
-  var
-    quotient = a div b
-    fraction = $((a mod b) div b)
-  fraction = fraction[1..fraction.high]
-  result = newDecimal($quotient & $fraction)
-
-proc `div`*(a, b: Decimal): Decimal =
+proc `/`*(a, b: Decimal): Decimal =
   var
     precision = 15
     quotient, remainder: BigInt
