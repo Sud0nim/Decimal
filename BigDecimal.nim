@@ -112,3 +112,68 @@ proc `/`*(a, b: Decimal): Decimal =
   result.value = quotient
   result.exponent = exp * -1
   
+
+proc `+`(a, b: Decimal): Decimal =
+  # TODO: Refactor out if/else nested in favour of simplified handling
+  if abs(a.exponent) > abs(b.exponent):
+    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    if a.sign == b.sign:
+      result.sign = a.sign
+      result.value = a.value + normalisedBValue
+      result.exponent = a.exponent
+    else:
+      if a.value > normalisedBValue:
+        result.sign = a.sign
+        result.value = a.value - normalisedBValue
+        result.exponent = a.exponent
+      elif a.value < normalisedBValue:
+        result.sign = b.sign
+        result.value = normalisedBValue - a.value
+        result.exponent = a.exponent
+      else:
+        result.sign = 0
+        result.value = initBigInt(0)
+        result.exponent = 0
+  elif abs(a.exponent) < abs(b.exponent):
+    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    if b.sign == a.sign:
+      result.sign = b.sign
+      result.value = b.value + normalisedAValue
+      result.exponent = b.exponent
+    else:
+      if b.value > normalisedAValue:
+        result.sign = b.sign
+        result.value = b.value - normalisedAValue
+        result.exponent = b.exponent
+      elif b.value < normalisedAValue:
+        result.sign = a.sign
+        result.value = normalisedAValue - b.value
+        result.exponent = b.exponent
+      else:
+        result.sign = 0
+        result.value = initBigInt(0)
+        result.exponent = 0
+  else:
+    result.exponent = a.exponent
+    if a.sign == b.sign:
+      result.sign = a.sign
+      result.value = a.value + b.value
+    else:
+      if a.value > b.value:
+        result.sign = a.sign
+        result.value = a.value - b.value
+      elif a.value < b.value:
+        result.sign = b.sign
+        result.value = b.value - a.value
+      else:
+        result.sign = 0
+        result.value = initBigInt(0)
+
+proc `-`*(a,b: Decimal): Decimal =
+  result = b
+  if result.sign == 1:
+    result.sign = 0
+  else:
+    result.sign = 1
+  result = a + result
+
