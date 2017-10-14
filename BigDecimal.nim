@@ -110,5 +110,5 @@ proc `/`*(a, b: Decimal): Decimal =
       quotient = quotient + 1
   result.sign = sign
   result.value = quotient
-  result.exponent = exp
+  result.exponent = exp * -1
   
