@@ -7,3 +7,4 @@
 7. Test, test, test some more
 8. Error handling / exceptions
 9. More advanced math functions
+10. Scientific notation and any other output/formatting options
