@@ -57,13 +57,27 @@ proc newDecimal*(number: BigInt): Decimal =
 
 proc `$`*(number: Decimal): string =
   #TODO: make sure to add enough zeros for precision setting so that format + precision is preserved for consistency
+  # also optimise this, it is very wasteful
   var
     value = $number.value
+    precision = 15
     sign = ""
     decimalPosition = value.len - abs(number.exponent)
+    trailingZeros = precision - abs(number.exponent)
+  echo decimalPosition
   if number.sign == 1:
     sign = "-"
-  result = sign & value[0..<decimalPosition] & "." & value[decimalPosition..value.high]
+  if decimalPosition < 0:
+    result =   value[decimalPosition..value.high]
+    for i in 0..<abs(decimalPosition):
+      result = "0" & result
+    result = "0" & "." & result
+  else:
+    result = value[0..<decimalPosition] & "." & value[decimalPosition..value.high]
+  result = sign & result
+  if trailingZeros > 0:
+    for i in 0..<trailingZeros:
+      result = result & "0"
 
 proc `echo`(number: Decimal) =
   echo $number
