@@ -111,7 +111,7 @@ proc `/`*(a, b: Decimal): Decimal =
     precision = 15
     quotient, remainder: BigInt
     sign = a.sign * b.sign 
-    shift = len($a.value) - len($b.value) + precision + 1 
+    shift = len($a.value) + len($b.value) + precision + 1  # changed this to add lengths instead of subtract, sort out precision later
     exp = a.exponent - b.exponent + shift
   if shift >= 0:
     quotient = (a.value * pow(initBigInt(10), initBigInt(shift))) div b.value
@@ -124,7 +124,7 @@ proc `/`*(a, b: Decimal): Decimal =
       quotient = quotient + 1
   result.sign = sign
   result.value = quotient
-  result.exponent = exp * -1
+  result.exponent = (a.exponent - b.exponent - shift)
   
 
 proc `+`(a, b: Decimal): Decimal =
@@ -191,3 +191,21 @@ proc `-`*(a,b: Decimal): Decimal =
     result.sign = 1
   result = a + result
 
+proc `^`*(a: Decimal, b: int): Decimal =
+  result = a
+  for i in 1..<abs(b):
+    result = result * a
+  if b < 0:
+    result = newDecimal(1) / result
+  elif b == 0:
+    result = newDecimal(1)
+
+
+proc pow*(a: Decimal, b: int): Decimal =
+  result = a
+  for i in 1..<abs(b):
+    result = result * a
+  if b < 0:
+    result = newDecimal(1) / result
+  elif b == 0:
+    result = newDecimal(1)
