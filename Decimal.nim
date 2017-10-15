@@ -283,3 +283,272 @@ proc pow*(a: Decimal, b: int): Decimal =
     result = newDecimal(1) / result
   elif b == 0:
     result = newDecimal(1)
+
+proc `==`*(a, b: Decimal): bool =
+  if a.value != b.value:
+    return false
+  elif a.sign != b.sign:
+    return false
+  elif a.exponent != b.exponent:
+    return false
+  return true
+
+proc `!=`*(a, b: Decimal): bool =
+  if a == b:
+    result = false
+  else:
+    result = true
+
+proc `>`*(a, b: Decimal): bool =
+  if a.sign > b.sign:
+    return false
+  if abs(a.exponent) > abs(b.exponent):
+    let normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.value > normalisedBValue
+  elif abs(a.exponent) < abs(b.exponent):
+    let normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedAValue > b.value
+  else:
+    result = a.value > b.value
+
+proc `>`*(a: Decimal, b: int): bool =
+  let bDecimal = newDecimal(b)
+  result = a > bDecimal
+
+proc `>`*(a: Decimal, b: float): bool =
+  let bDecimal = newDecimal($b)
+  result = a > bDecimal
+
+proc `>`*(a: Decimal, b: string): bool =
+  # try, raise exception if not valid number
+  let bDecimal = newDecimal(b)
+  result = a > bDecimal
+
+proc `>`*(a: Decimal, b: BigInt): bool =
+  let bDecimal = newDecimal(b)
+  result = a > bDecimal
+
+proc `>`*(a: int, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal > b
+
+proc `>`*(a: float, b: Decimal): bool =
+  let aDecimal = newDecimal($a)
+  result = aDecimal > b
+
+proc `>`*(a: string, b: Decimal): bool =
+  # try, raise exception if not valid number
+  let aDecimal = newDecimal(a)
+  result = aDecimal > b
+
+proc `>`*(a: BigInt, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal > b
+
+proc `>=`*(a, b: Decimal): bool =
+  if a.sign > b.sign:
+    return false
+  if abs(a.exponent) > abs(b.exponent):
+    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.value >= normalisedBValue
+  elif abs(a.exponent) < abs(b.exponent):
+    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedAValue >= b.value
+  else:
+    result = a.value >= b.value
+
+proc `>=`*(a: Decimal, b: int): bool =
+  let bDecimal = newDecimal(b)
+  result = a >= bDecimal
+
+proc `>=`*(a: Decimal, b: float): bool =
+  let bDecimal = newDecimal($b)
+  result = a >= bDecimal
+
+proc `>=`*(a: Decimal, b: string): bool =
+  # try, raise exception if not valid number
+  let bDecimal = newDecimal(b)
+  result = a >= bDecimal
+
+proc `>=`*(a: Decimal, b: BigInt): bool =
+  let bDecimal = newDecimal(b)
+  result = a >= bDecimal
+
+proc `>=`*(a: int, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal >= b
+
+proc `>=`*(a: float, b: Decimal): bool =
+  let aDecimal = newDecimal($a)
+  result = aDecimal >= b
+
+proc `>=`*(a: string, b: Decimal): bool =
+  # try, raise exception if not valid number
+  let aDecimal = newDecimal(a)
+  result = aDecimal >= b
+
+proc `>=`*(a: BigInt, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal >= b
+
+proc `<`*(a, b: Decimal): bool =
+  if a.sign < b.sign:
+    return false
+  if abs(a.exponent) > abs(b.exponent):
+    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.value < normalisedBValue
+  elif abs(a.exponent) < abs(b.exponent):
+    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedAValue < b.value
+  else:
+    result = a.value < b.value
+
+proc `<`*(a: Decimal, b: int): bool =
+  let bDecimal = newDecimal(b)
+  result = a < bDecimal
+
+proc `<`*(a: Decimal, b: float): bool =
+  let bDecimal = newDecimal($b)
+  result = a < bDecimal
+
+proc `<`*(a: Decimal, b: string): bool =
+  # try, raise exception if not valid number
+  let bDecimal = newDecimal(b)
+  result = a < bDecimal
+
+proc `<`*(a: Decimal, b: BigInt): bool =
+  let bDecimal = newDecimal(b)
+  result = a < bDecimal
+
+proc `<`*(a: int, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal < b
+
+proc `<`*(a: float, b: Decimal): bool =
+  let aDecimal = newDecimal($a)
+  result = aDecimal < b
+
+proc `<`*(a: string, b: Decimal): bool =
+  # try, raise exception if not valid number
+  let aDecimal = newDecimal(a)
+  result = aDecimal < b
+
+proc `<`*(a: BigInt, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal < b
+
+proc `<=`*(a, b: Decimal): bool =
+  if a.sign < b.sign:
+    return false
+  if abs(a.exponent) > abs(b.exponent):
+    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.value <= normalisedBValue
+  elif abs(a.exponent) < abs(b.exponent):
+    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedAValue <= b.value
+  else:
+    result = a.value <= b.value
+
+proc `<=`*(a: Decimal, b: int): bool =
+  let bDecimal = newDecimal(b)
+  result = a <= bDecimal
+
+proc `<=`*(a: Decimal, b: float): bool =
+  let bDecimal = newDecimal($b)
+  result = a <= bDecimal
+
+proc `<=`*(a: Decimal, b: string): bool =
+  # try, raise exception if not valid number
+  let bDecimal = newDecimal(b)
+  result = a <= bDecimal
+
+proc `<=`*(a: Decimal, b: BigInt): bool =
+  let bDecimal = newDecimal(b)
+  result = a <= bDecimal
+
+proc `<=`*(a: int, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal <= b
+
+proc `<=`*(a: float, b: Decimal): bool =
+  let aDecimal = newDecimal($a)
+  result = aDecimal <= b
+
+proc `<=`*(a: string, b: Decimal): bool =
+  # try, raise exception if not valid number
+  let aDecimal = newDecimal(a)
+  result = aDecimal <= b
+
+proc `<=`*(a: BigInt, b: Decimal): bool =
+  let aDecimal = newDecimal(a)
+  result = aDecimal <= b
+  
+# Tests to ensure nothing breaks:
+
+#[ 
+Note - initialising with floats may summon a dragon. String initialisation is the best option
+if you are wishing to use high decimal precision, 
+as floats inherently are not able to correctly represent all decimal numbers precisely.
+Because of this in the tests I should take out the float vs string init assertions, 
+but I am leaving them in for now to see how often it causes a failure in precision.
+]#
+
+assert(newDecimal("9999999999999") == Decimal(sign: 0, value: initBigInt(9999999999999), exponent: 0))
+assert(newDecimal("-9999999") == Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
+assert(newDecimal("9999999999999.99") == Decimal(sign: 0, value: initBigInt(999999999999999), exponent: -2))
+assert(newDecimal("-9999999.113") == Decimal(sign: 1, value: initBigInt(9999999113), exponent: -3))
+assert(newDecimal("9999999999999") != Decimal(sign: 0, value: initBigInt(9999998999999), exponent: 0))
+# Int == BigInt
+assert(newDecimal(123456) == Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
+assert(newDecimal(-9999999) == Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
+assert(newDecimal(984323112) == Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
+assert(newDecimal(-99999900) == Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
+assert(newDecimal(987654323) != Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
+# String == Float
+assert(newDecimal("0.123844") == newDecimal(0.123844))
+assert(newDecimal("-9999999") == newDecimal(-9999999))
+assert(newDecimal("9999999999999.99") == newDecimal(9999999999999.99))
+assert(newDecimal("-9999999.113") == newDecimal(-9999999.113))
+assert(newDecimal("9999999999999") != newDecimal(99999999999.99))
+# String compare
+assert($newDecimal("0.123844") == $newDecimal(0.123844))
+assert($newDecimal("-9999999") == $newDecimal(-9999999))
+assert($newDecimal("9999999999999.99") == $newDecimal(9999999999999.99))
+assert($newDecimal("-9999999.113") == $newDecimal(-9999999.113))
+assert($newDecimal("9999999999999") != $newDecimal(99999999999.99))
+assert($newDecimal(123456) == $Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
+assert($newDecimal(-9999999) == $Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
+assert($newDecimal(984323112) == $Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
+assert($newDecimal(-99999900) == $Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
+assert($newDecimal(987654323) != $Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
+assert($newDecimal(123456) == $Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
+assert($newDecimal(-9999999) == $Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
+assert($newDecimal(984323112) == $Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
+assert($newDecimal(-99999900) == $Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
+assert($newDecimal(987654323) != $Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
+# With precision of minimum 15, no maximum
+assert($newDecimal(123.456) == "123.456000000000000")
+assert($newDecimal(-123.456) == "-123.456000000000000")
+assert($newDecimal(123456) == "123456.000000000000000")
+assert($newDecimal(-123456) == "-123456.000000000000000")
+assert($newDecimal("0.0000129282736181827121212") == "0.0000129282736181827121212")
+assert($newDecimal("-0.09283212") == "-0.092832120000000")
+assert($newDecimal(initBigInt(123456)) == "123456.000000000000000")
+assert($newDecimal("0") == "0.000000000000000")
+
+# Init procedures are working - test arithmetic
+
+# Using current precision settings - update these when a context class is added.
+
+assert(newDecimal("987654323") * newDecimal("98760006323") == newDecimal("97540747184418284329"))
+assert(newDecimal("5765673") * newDecimal("98760006323") == newDecimal("569417901936350379"))
+assert(newDecimal("12345.9876") * newDecimal("9000.001") == newDecimal("111113900.7459876"))
+assert(newDecimal("98765432378237878238322343.923273754293259235892935235") * newDecimal("98760006323.1212121214125") == newDecimal("9754074726180573349995607815094526520.4241699729543015912608823485558192194375"))
+assert(newDecimal("987654323.0001") * newDecimal("0.000100000220000100022420") == newDecimal("98765.6495840598475975099316622420"))
+
+# Test repeat arithmetic with each type to ensure no rounding issue.
+
+assert(newDecimal("0.1") + newDecimal("0.1") + newDecimal("0.1") + newDecimal("0.1") + 
+  newDecimal("0.1") + newDecimal("0.1") + newDecimal("0.1") + newDecimal("0.1") == newDecimal("0.8"))
+assert(newDecimal("0.1") * newDecimal("0.1") * newDecimal("0.1") * newDecimal("0.1") * 
+  newDecimal("0.1") * newDecimal("0.1") * newDecimal("0.1") * newDecimal("0.1") == newDecimal("0.00000001"))
