@@ -1,3 +1,5 @@
+import strutils, math, bigints
+
 type
   Decimal* = object
     sign*: int
@@ -22,21 +24,7 @@ proc newDecimal*(number: string): Decimal =
     result.exponent = components[1].len * -1 
     
 proc newDecimal*(number: float): Decimal =
-  var 
-    inputString = $number
-  if inputString.startsWith("-"):
-    result.sign = 1
-    inputString = inputString[1..inputString.high]
-  else:
-    result.sign = 0
-  let
-    components = inputString.split('.', maxsplit = 1)
-  if components.len == 1:
-    result.value = initBigInt(components[0])
-    result.exponent = 0
-  else:
-    result.value =  initBigInt(components[0] & components[1])
-    result.exponent = components[1].len  * -1
+  result = newDecimal($number)
 
 proc newDecimal*(number: int): Decimal =
   if number < 0:
@@ -79,36 +67,53 @@ proc `$`*(number: Decimal): string =
     for i in 0..<trailingZeros:
       result = result & "0"
 
-proc `echo`(number: Decimal) =
+proc `echo`*(number: Decimal) =
   echo $number
 
-proc `^`[T: float|int](base: T; exp: int): T =
-  var (base, exp) = (base, exp)
-  result = 1
- 
-  if exp < 0:
-    when T is int:
-      if base * base != 1: return 0
-      elif (exp and 1) == 0: return 1
-      else: return base
-    else:
-      base = 1.0 / base
-      exp = -exp
- 
-  while exp != 0:
-    if (exp and 1) != 0:
-      result *= base
-    exp = exp shr 1
-    base *= base
- 
-proc `*`(a, b: Decimal): Decimal =
+proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
   result.value = a.value * b.value
 
+proc `*`*(a: Decimal, b: int): Decimal =
+  result = newDecimal(b)
+  result.exponent = a.exponent + result.exponent
+  result.sign = a.sign xor result.sign
+  result.value = a.value * result.value
+
+proc `*`*(a: int, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result.exponent = b.exponent + result.exponent
+  result.sign = b.sign xor result.sign
+  result.value = b.value * result.value
+
+proc `*`*(a: Decimal, b: float): Decimal =
+  result = newDecimal($b)
+  result.exponent = a.exponent + result.exponent
+  result.sign = a.sign xor result.sign
+  result.value = a.value * result.value
+
+proc `*`*(a: float, b: Decimal): Decimal =
+  result = newDecimal($a)
+  result.exponent = b.exponent + result.exponent
+  result.sign = b.sign xor result.sign
+  result.value = b.value * result.value
+
+proc `*`*(a: Decimal, b: BigInt): Decimal =
+  result = newDecimal(b)
+  result.exponent = a.exponent + result.exponent
+  result.sign = a.sign xor result.sign
+  result.value = a.value * result.value
+
+proc `*`*(a: BigInt, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result.exponent = b.exponent + result.exponent
+  result.sign = b.sign xor result.sign
+  result.value = b.value * result.value
+
 proc `/`*(a, b: Decimal): Decimal =
   var
-    precision = 15
+    precision = 15 # replace with a context object
     quotient, remainder: BigInt
     sign = a.sign * b.sign 
     shift = len($a.value) + len($b.value) + precision + 1  # changed this to add lengths instead of subtract, sort out precision later
@@ -125,9 +130,32 @@ proc `/`*(a, b: Decimal): Decimal =
   result.sign = sign
   result.value = quotient
   result.exponent = (a.exponent - b.exponent - shift)
-  
 
-proc `+`(a, b: Decimal): Decimal =
+proc `/`*(a: Decimal, b: int): Decimal =
+  result = newDecimal(b)
+  result = a / result
+
+proc `/`*(a: int, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result / b
+
+proc `/`*(a: Decimal, b: float): Decimal =
+  result = newDecimal($b)
+  result = a / result
+
+proc `/`*(a: float, b: Decimal): Decimal =
+  result = newDecimal($a)
+  result = result / b
+
+proc `/`*(a: Decimal, b: BigInt): Decimal =
+  result = newDecimal(b)
+  result = a / result
+
+proc `/`*(a: BigInt, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result / b
+
+proc `+`*(a, b: Decimal): Decimal =
   # TODO: Refactor out if/else nested in favour of simplified handling
   if abs(a.exponent) > abs(b.exponent):
     var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
@@ -183,6 +211,30 @@ proc `+`(a, b: Decimal): Decimal =
         result.sign = 0
         result.value = initBigInt(0)
 
+proc `+`*(a: Decimal, b: int): Decimal =
+  result = newDecimal(b)
+  result = a + result
+
+proc `+`*(a: int, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result + b
+
+proc `+`*(a: Decimal, b: float): Decimal =
+  result = newDecimal($b)
+  result = a + result
+
+proc `+`*(a: float, b: Decimal): Decimal =
+  result = newDecimal($a)
+  result = result + b
+
+proc `+`*(a: Decimal, b: BigInt): Decimal =
+  result = newDecimal(b)
+  result = a + result
+
+proc `+`*(a: BigInt, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result + b
+
 proc `-`*(a,b: Decimal): Decimal =
   result = b
   if result.sign == 1:
@@ -190,6 +242,30 @@ proc `-`*(a,b: Decimal): Decimal =
   else:
     result.sign = 1
   result = a + result
+
+proc `-`*(a: Decimal, b: int): Decimal =
+  result = newDecimal(b)
+  result = a - result
+
+proc `-`*(a: int, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result - b
+
+proc `-`*(a: Decimal, b: float): Decimal =
+  result = newDecimal($b)
+  result = a - result
+
+proc `-`*(a: float, b: Decimal): Decimal =
+  result = newDecimal($a)
+  result = result - b
+
+proc `-`*(a: Decimal, b: BigInt): Decimal =
+  result = newDecimal(b)
+  result = a - result
+
+proc `-`*(a: BigInt, b: Decimal): Decimal =
+  result = newDecimal(a)
+  result = result - b
 
 proc `^`*(a: Decimal, b: int): Decimal =
   result = a
@@ -199,7 +275,6 @@ proc `^`*(a: Decimal, b: int): Decimal =
     result = newDecimal(1) / result
   elif b == 0:
     result = newDecimal(1)
-
 
 proc pow*(a: Decimal, b: int): Decimal =
   result = a
