@@ -52,7 +52,6 @@ proc `$`*(number: Decimal): string =
     sign = ""
     decimalPosition = value.len - abs(number.exponent)
     trailingZeros = precision - abs(number.exponent)
-  echo decimalPosition
   if number.sign == 1:
     sign = "-"
   if decimalPosition < 0:
