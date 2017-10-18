@@ -483,6 +483,14 @@ proc `<=`*(a: BigInt, b: Decimal): bool =
   let aDecimal = newDecimal(a)
   result = aDecimal <= b
   
+proc setPrecision(a: var Decimal, precision: int) =
+  var multiplier = precision + a.exponent
+  if multiplier >= 0:
+    a.value = a.value * pow(initBigInt(10), initBigInt(multiplier))
+  else:
+    a.value = a.value div pow(initBigInt(10), initBigInt(-1 * multiplier))
+  a.exponent = a.exponent - multiplier
+  
 # Tests to ensure nothing breaks:
 
 #[ 
