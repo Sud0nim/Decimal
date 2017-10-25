@@ -5,12 +5,16 @@ type
     RoundDown, RoundHalfUp, RoundHalfEven,
     RoundCeiling, RoundFloor, RoundHalfDown,
     RoundUp, Round05Up
+  Signal* = enum
+    Clamped, DivisionByZero, Inexact, Overflow, Rounded,
+    Underflow, InvalidOperation, Subnormal, FloatOperation
   Decimal* = object
     sign*, exponent*: int
-    coefficient*: BigInt
+    value*: BigInt
   Context* = object
-    precision*, flags*, traps*: int
+    precision*: int
     rounding*: Rounding
+    flags*, traps*: seq[Signal]
 
 proc newDecimal*(number: string): Decimal =
   var 
