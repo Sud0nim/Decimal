@@ -43,28 +43,65 @@ proc newDecimal*(number: BigInt): Decimal =
   result.value = number
   result.exponent = 0
 
-proc `$`*(number: Decimal): string =
-  #TODO: make sure to add enough zeros for precision setting so that format + precision is preserved for consistency
-  # also optimise this, it is very wasteful
+proc `toDecimalString`*(number: Decimal): string =
   var
     value = $number.value
-    precision = 15
-    sign = ""
-    decimalPosition = value.len - abs(number.exponent)
-    trailingZeros = precision - abs(number.exponent)
-  if number.sign == 1:
-    sign = "-"
+    precision = 28
+    sign = ["", "-"][number.sign]
+    decimalPosition = value.len + number.exponent
+    trailingZeros = precision
+  if number.exponent < 0:
+    trailingZeros = trailingZeros + number.exponent
+  #if number.sign == 1:
+  #  sign = "-"
   if decimalPosition < 0:
-    result =   value[decimalPosition..value.high]
+    result = value[decimalPosition..value.high]
     for i in 0..<abs(decimalPosition):
       result = "0" & result
     result = "0" & "." & result
   else:
-    result = value[0..<decimalPosition] & "." & value[decimalPosition..value.high]
+    result = value[0..<decimalPosition]
+    for i in 0..<(decimalPosition - value.len):
+      result = result & "0"
+    result = result & "." #& value[decimalPosition..value.high]
   result = sign & result
   if trailingZeros > 0:
     for i in 0..<trailingZeros:
       result = result & "0"
+
+proc toScientificString*(number: Decimal): string = 
+  var
+    precision = 28
+    value = $number.value
+    leftside = value[0]
+    rightside, exp: string
+    expSign = "+"
+    leftdigits = number.exponent + value.len
+  if precision > value.len:
+    rightside = value[1..value.high]
+  else:
+    rightside = value[1..<(precision)]
+  var 
+    sign = ""
+  if number.sign == 1:
+    sign = "-"
+  if leftdigits == 1:
+    exp = ""
+  if number.exponent < 0:
+    expSign = "-"
+  else:
+    exp = "E" & expSign & $(leftdigits-1)
+  result = sign & leftside & "." & rightside & exp
+
+proc `$`*(number: Decimal): string =
+  var
+    value = $number.value
+    numberLength = value.len + abs(value.len + number.exponent)
+    precision = 28
+  if number.exponent == 0 and value.len < precision:
+    result = number.toDecimalString
+  else:
+    result = number.toScientificString
 
 proc `echo`*(number: Decimal) =
   echo $number
@@ -112,23 +149,24 @@ proc `*`*(a: BigInt, b: Decimal): Decimal =
 
 proc `/`*(a, b: Decimal): Decimal =
   var
+    zero = initBigInt(0)
     precision = 15 # replace with a context object
     quotient, remainder: BigInt
     sign = a.sign * b.sign 
-    shift = len($a.value) + len($b.value) + precision + 1  # changed this to add lengths instead of subtract, sort out precision later
-    exp = a.exponent - b.exponent + shift
+    shift = len($b.value) - len($a.value) + precision + 1
+    exp = a.exponent - b.exponent - shift
   if shift >= 0:
     quotient = (a.value * pow(initBigInt(10), initBigInt(shift))) div b.value
     remainder = (a.value * pow(initBigInt(10), initBigInt(shift))) mod b.value
   else:
-    quotient = (a.value * pow(initBigInt(10), initBigInt(-1 * shift))) div b.value
-    remainder = (a.value * pow(initBigInt(10), initBigInt(-1 * shift))) mod b.value
-  if remainder != 0:
-    if quotient mod 5 == 0:
+    quotient = a.value div (b.value * pow(initBigInt(10), initBigInt(-1 * shift)))
+    remainder = a.value mod (b.value * pow(initBigInt(10), initBigInt(-1 * shift))) 
+  if remainder != zero:
+    if quotient mod 5 == zero:
       quotient = quotient + 1
   result.sign = sign
   result.value = quotient
-  result.exponent = (a.exponent - b.exponent - shift)
+  result.exponent = exp
 
 proc `/`*(a: Decimal, b: int): Decimal =
   result = newDecimal(b)
