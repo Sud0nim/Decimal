@@ -10,7 +10,7 @@ type
     Underflow, InvalidOperation, Subnormal, FloatOperation
   Decimal* = object
     sign*, exponent*: int
-    value*: BigInt
+    coefficient*: BigInt
   Context* = object
     precision*: int
     rounding*: Rounding
