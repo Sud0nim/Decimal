@@ -3,7 +3,7 @@ import strutils, math, bigints
 type
   Decimal* = object
     sign*: int
-    value*: BigInt
+    coefficient*: BigInt
     exponent*: int
 
 proc newDecimal*(number: string): Decimal =
@@ -17,10 +17,10 @@ proc newDecimal*(number: string): Decimal =
   let
     components = inputString.split('.', maxsplit = 1)
   if components.len == 1:
-    result.value = initBigInt(components[0])
+    result.coefficient = initBigInt(components[0])
     result.exponent = 0
   else:
-    result.value =  initBigInt(components[0] & components[1])
+    result.coefficient =  initBigInt(components[0] & components[1])
     result.exponent = components[1].len * -1 
     
 proc newDecimal*(number: float): Decimal =
@@ -29,10 +29,10 @@ proc newDecimal*(number: float): Decimal =
 proc newDecimal*(number: int): Decimal =
   if number < 0:
     result.sign = 1
-    result.value = initBigInt(number * -1)
+    result.coefficient = initBigInt(number * -1)
   else:
     result.sign = 0
-    result.value = initBigInt(number)
+    result.coefficient = initBigInt(number)
   result.exponent = 0
 
 proc newDecimal*(number: BigInt): Decimal =
@@ -40,12 +40,12 @@ proc newDecimal*(number: BigInt): Decimal =
     result.sign = 1
   else:
     result.sign = 0
-  result.value = number
+  result.coefficient = number
   result.exponent = 0
 
 proc `toDecimalString`*(number: Decimal): string =
   var
-    value = $number.value
+    value = $number.coefficient
     precision = 28
     sign = ["", "-"][number.sign]
     decimalPosition = value.len + number.exponent
@@ -72,7 +72,7 @@ proc `toDecimalString`*(number: Decimal): string =
 proc toScientificString*(number: Decimal): string = 
   var
     precision = 28
-    value = $number.value
+    value = $number.coefficient
     leftside = value[0]
     rightside, exp: string
     expSign = "+"
@@ -95,7 +95,7 @@ proc toScientificString*(number: Decimal): string =
 
 proc `$`*(number: Decimal): string =
   var
-    value = $number.value
+    value = $number.coefficient
     numberLength = value.len + abs(value.len + number.exponent)
     precision = 28
   if number.exponent == 0 and value.len < precision:
@@ -109,43 +109,43 @@ proc `echo`*(number: Decimal) =
 proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
-  result.value = a.value * b.value
+  result.coefficient = a.coefficient * b.coefficient
 
 proc `*`*(a: Decimal, b: int): Decimal =
   result = newDecimal(b)
   result.exponent = a.exponent + result.exponent
   result.sign = a.sign xor result.sign
-  result.value = a.value * result.value
+  result.coefficient = a.coefficient * result.coefficient
 
 proc `*`*(a: int, b: Decimal): Decimal =
   result = newDecimal(a)
   result.exponent = b.exponent + result.exponent
   result.sign = b.sign xor result.sign
-  result.value = b.value * result.value
+  result.coefficient = b.coefficient * result.coefficient
 
 proc `*`*(a: Decimal, b: float): Decimal =
   result = newDecimal($b)
   result.exponent = a.exponent + result.exponent
   result.sign = a.sign xor result.sign
-  result.value = a.value * result.value
+  result.coefficient = a.coefficient * result.coefficient
 
 proc `*`*(a: float, b: Decimal): Decimal =
   result = newDecimal($a)
   result.exponent = b.exponent + result.exponent
   result.sign = b.sign xor result.sign
-  result.value = b.value * result.value
+  result.coefficient = b.coefficient * result.coefficient
 
 proc `*`*(a: Decimal, b: BigInt): Decimal =
   result = newDecimal(b)
   result.exponent = a.exponent + result.exponent
   result.sign = a.sign xor result.sign
-  result.value = a.value * result.value
+  result.coefficient = a.coefficient * result.coefficient
 
 proc `*`*(a: BigInt, b: Decimal): Decimal =
   result = newDecimal(a)
   result.exponent = b.exponent + result.exponent
   result.sign = b.sign xor result.sign
-  result.value = b.value * result.value
+  result.coefficient = b.coefficient * result.coefficient
 
 proc `/`*(a, b: Decimal): Decimal =
   var
@@ -153,19 +153,19 @@ proc `/`*(a, b: Decimal): Decimal =
     precision = 15 # replace with a context object
     quotient, remainder: BigInt
     sign = a.sign * b.sign 
-    shift = len($b.value) - len($a.value) + precision + 1
+    shift = len($b.coefficient) - len($a.coefficient) + precision + 1
     exp = a.exponent - b.exponent - shift
   if shift >= 0:
-    quotient = (a.value * pow(initBigInt(10), initBigInt(shift))) div b.value
-    remainder = (a.value * pow(initBigInt(10), initBigInt(shift))) mod b.value
+    quotient = (a.coefficient * pow(initBigInt(10), initBigInt(shift))) div b.coefficient
+    remainder = (a.coefficient * pow(initBigInt(10), initBigInt(shift))) mod b.coefficient
   else:
-    quotient = a.value div (b.value * pow(initBigInt(10), initBigInt(-1 * shift)))
-    remainder = a.value mod (b.value * pow(initBigInt(10), initBigInt(-1 * shift))) 
+    quotient = a.coefficient div (b.coefficient * pow(initBigInt(10), initBigInt(-1 * shift)))
+    remainder = a.coefficient mod (b.coefficient * pow(initBigInt(10), initBigInt(-1 * shift))) 
   if remainder != zero:
     if quotient mod 5 == zero:
       quotient = quotient + 1
   result.sign = sign
-  result.value = quotient
+  result.coefficient = quotient
   result.exponent = exp
 
 proc `/`*(a: Decimal, b: int): Decimal =
@@ -195,58 +195,58 @@ proc `/`*(a: BigInt, b: Decimal): Decimal =
 proc `+`*(a, b: Decimal): Decimal =
   # TODO: Refactor out if/else nested in favour of simplified handling
   if abs(a.exponent) > abs(b.exponent):
-    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
     if a.sign == b.sign:
       result.sign = a.sign
-      result.value = a.value + normalisedBValue
+      result.coefficient = a.coefficient + normalisedBCoefficient
       result.exponent = a.exponent
     else:
-      if a.value > normalisedBValue:
+      if a.coefficient > normalisedBCoefficient:
         result.sign = a.sign
-        result.value = a.value - normalisedBValue
+        result.coefficient = a.coefficient - normalisedBCoefficient
         result.exponent = a.exponent
-      elif a.value < normalisedBValue:
+      elif a.coefficient < normalisedBCoefficient:
         result.sign = b.sign
-        result.value = normalisedBValue - a.value
+        result.coefficient = normalisedBCoefficient - a.coefficient
         result.exponent = a.exponent
       else:
         result.sign = 0
-        result.value = initBigInt(0)
+        result.coefficient = initBigInt(0)
         result.exponent = 0
   elif abs(a.exponent) < abs(b.exponent):
-    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
     if b.sign == a.sign:
       result.sign = b.sign
-      result.value = b.value + normalisedAValue
+      result.coefficient = b.coefficient + normalisedACoefficient
       result.exponent = b.exponent
     else:
-      if b.value > normalisedAValue:
+      if b.coefficient > normalisedACoefficient:
         result.sign = b.sign
-        result.value = b.value - normalisedAValue
+        result.coefficient = b.coefficient - normalisedACoefficient
         result.exponent = b.exponent
-      elif b.value < normalisedAValue:
+      elif b.coefficient < normalisedACoefficient:
         result.sign = a.sign
-        result.value = normalisedAValue - b.value
+        result.coefficient = normalisedACoefficient - b.coefficient
         result.exponent = b.exponent
       else:
         result.sign = 0
-        result.value = initBigInt(0)
+        result.coefficient = initBigInt(0)
         result.exponent = 0
   else:
     result.exponent = a.exponent
     if a.sign == b.sign:
       result.sign = a.sign
-      result.value = a.value + b.value
+      result.coefficient = a.coefficient + b.coefficient
     else:
-      if a.value > b.value:
+      if a.coefficient > b.coefficient:
         result.sign = a.sign
-        result.value = a.value - b.value
-      elif a.value < b.value:
+        result.coefficient = a.coefficient - b.coefficient
+      elif a.coefficient < b.coefficient:
         result.sign = b.sign
-        result.value = b.value - a.value
+        result.coefficient = b.coefficient - a.coefficient
       else:
         result.sign = 0
-        result.value = initBigInt(0)
+        result.coefficient = initBigInt(0)
 
 proc `+`*(a: Decimal, b: int): Decimal =
   result = newDecimal(b)
@@ -323,7 +323,7 @@ proc pow*(a: Decimal, b: int): Decimal =
     result = newDecimal(1)
 
 proc `==`*(a, b: Decimal): bool =
-  if a.value != b.value:
+  if a.coefficient != b.coefficient:
     return false
   elif a.sign != b.sign:
     return false
@@ -341,13 +341,13 @@ proc `>`*(a, b: Decimal): bool =
   if a.sign > b.sign:
     return false
   if abs(a.exponent) > abs(b.exponent):
-    let normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.value > normalisedBValue
+    let normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.coefficient > normalisedBCoefficient
   elif abs(a.exponent) < abs(b.exponent):
-    let normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedAValue > b.value
+    let normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedACoefficient > b.coefficient
   else:
-    result = a.value > b.value
+    result = a.coefficient > b.coefficient
 
 proc `>`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -387,13 +387,13 @@ proc `>=`*(a, b: Decimal): bool =
   if a.sign > b.sign:
     return false
   if abs(a.exponent) > abs(b.exponent):
-    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.value >= normalisedBValue
+    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.coefficient >= normalisedBCoefficient
   elif abs(a.exponent) < abs(b.exponent):
-    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedAValue >= b.value
+    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedACoefficient >= b.coefficient
   else:
-    result = a.value >= b.value
+    result = a.coefficient >= b.coefficient
 
 proc `>=`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -433,13 +433,13 @@ proc `<`*(a, b: Decimal): bool =
   if a.sign < b.sign:
     return false
   if abs(a.exponent) > abs(b.exponent):
-    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.value < normalisedBValue
+    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.coefficient < normalisedBCoefficient
   elif abs(a.exponent) < abs(b.exponent):
-    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedAValue < b.value
+    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedACoefficient < b.coefficient
   else:
-    result = a.value < b.value
+    result = a.coefficient < b.coefficient
 
 proc `<`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -479,13 +479,13 @@ proc `<=`*(a, b: Decimal): bool =
   if a.sign < b.sign:
     return false
   if abs(a.exponent) > abs(b.exponent):
-    var normalisedBValue = b.value * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.value <= normalisedBValue
+    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
+    result = a.coefficient <= normalisedBCoefficient
   elif abs(a.exponent) < abs(b.exponent):
-    var normalisedAValue = a.value * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedAValue <= b.value
+    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
+    result = normalisedACoefficient <= b.coefficient
   else:
-    result = a.value <= b.value
+    result = a.coefficient <= b.coefficient
 
 proc `<=`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -524,9 +524,9 @@ proc `<=`*(a: BigInt, b: Decimal): bool =
 proc setPrecision(a: var Decimal, precision: int) =
   var multiplier = precision + a.exponent
   if multiplier >= 0:
-    a.value = a.value * pow(initBigInt(10), initBigInt(multiplier))
+    a.coefficient = a.coefficient * pow(initBigInt(10), initBigInt(multiplier))
   else:
-    a.value = a.value div pow(initBigInt(10), initBigInt(-1 * multiplier))
+    a.coefficient = a.coefficient div pow(initBigInt(10), initBigInt(-1 * multiplier))
   a.exponent = a.exponent - multiplier
   
 # Tests to ensure nothing breaks:
@@ -539,17 +539,17 @@ Because of this in the tests I should take out the float vs string init assertio
 but I am leaving them in for now to see how often it causes a failure in precision.
 ]#
 
-assert(newDecimal("9999999999999") == Decimal(sign: 0, value: initBigInt(9999999999999), exponent: 0))
-assert(newDecimal("-9999999") == Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
-assert(newDecimal("9999999999999.99") == Decimal(sign: 0, value: initBigInt(999999999999999), exponent: -2))
-assert(newDecimal("-9999999.113") == Decimal(sign: 1, value: initBigInt(9999999113), exponent: -3))
-assert(newDecimal("9999999999999") != Decimal(sign: 0, value: initBigInt(9999998999999), exponent: 0))
+assert(newDecimal("9999999999999") == Decimal(sign: 0, coefficient: initBigInt(9999999999999), exponent: 0))
+assert(newDecimal("-9999999") == Decimal(sign: 1, coefficient: initBigInt(9999999), exponent: 0))
+assert(newDecimal("9999999999999.99") == Decimal(sign: 0, coefficient: initBigInt(999999999999999), exponent: -2))
+assert(newDecimal("-9999999.113") == Decimal(sign: 1, coefficient: initBigInt(9999999113), exponent: -3))
+assert(newDecimal("9999999999999") != Decimal(sign: 0, coefficient: initBigInt(9999998999999), exponent: 0))
 # Int == BigInt
-assert(newDecimal(123456) == Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
-assert(newDecimal(-9999999) == Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
-assert(newDecimal(984323112) == Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
-assert(newDecimal(-99999900) == Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
-assert(newDecimal(987654323) != Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
+assert(newDecimal(123456) == Decimal(sign: 0, coefficient: initBigInt(123456), exponent: 0))
+assert(newDecimal(-9999999) == Decimal(sign: 1, coefficient: initBigInt(9999999), exponent: 0))
+assert(newDecimal(984323112) == Decimal(sign: 0, coefficient: initBigInt(984323112), exponent: 0))
+assert(newDecimal(-99999900) == Decimal(sign: 1, coefficient: initBigInt(99999900), exponent: 0))
+assert(newDecimal(987654323) != Decimal(sign: 0, coefficient: initBigInt(99998999999), exponent: 0))
 # String == Float
 assert(newDecimal("0.123844") == newDecimal(0.123844))
 assert(newDecimal("-9999999") == newDecimal(-9999999))
@@ -562,16 +562,16 @@ assert($newDecimal("-9999999") == $newDecimal(-9999999))
 assert($newDecimal("9999999999999.99") == $newDecimal(9999999999999.99))
 assert($newDecimal("-9999999.113") == $newDecimal(-9999999.113))
 assert($newDecimal("9999999999999") != $newDecimal(99999999999.99))
-assert($newDecimal(123456) == $Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
-assert($newDecimal(-9999999) == $Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
-assert($newDecimal(984323112) == $Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
-assert($newDecimal(-99999900) == $Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
-assert($newDecimal(987654323) != $Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
-assert($newDecimal(123456) == $Decimal(sign: 0, value: initBigInt(123456), exponent: 0))
-assert($newDecimal(-9999999) == $Decimal(sign: 1, value: initBigInt(9999999), exponent: 0))
-assert($newDecimal(984323112) == $Decimal(sign: 0, value: initBigInt(984323112), exponent: 0))
-assert($newDecimal(-99999900) == $Decimal(sign: 1, value: initBigInt(99999900), exponent: 0))
-assert($newDecimal(987654323) != $Decimal(sign: 0, value: initBigInt(99998999999), exponent: 0))
+assert($newDecimal(123456) == $Decimal(sign: 0, coefficient: initBigInt(123456), exponent: 0))
+assert($newDecimal(-9999999) == $Decimal(sign: 1, coefficient: initBigInt(9999999), exponent: 0))
+assert($newDecimal(984323112) == $Decimal(sign: 0, coefficient: initBigInt(984323112), exponent: 0))
+assert($newDecimal(-99999900) == $Decimal(sign: 1, coefficient: initBigInt(99999900), exponent: 0))
+assert($newDecimal(987654323) != $Decimal(sign: 0, coefficient: initBigInt(99998999999), exponent: 0))
+assert($newDecimal(123456) == $Decimal(sign: 0, coefficient: initBigInt(123456), exponent: 0))
+assert($newDecimal(-9999999) == $Decimal(sign: 1, coefficient: initBigInt(9999999), exponent: 0))
+assert($newDecimal(984323112) == $Decimal(sign: 0, coefficient: initBigInt(984323112), exponent: 0))
+assert($newDecimal(-99999900) == $Decimal(sign: 1, coefficient: initBigInt(99999900), exponent: 0))
+assert($newDecimal(987654323) != $Decimal(sign: 0, coefficient: initBigInt(99998999999), exponent: 0))
 # With precision of minimum 15, no maximum
 assert($newDecimal(123.456) == "123.456000000000000")
 assert($newDecimal(-123.456) == "-123.456000000000000")
