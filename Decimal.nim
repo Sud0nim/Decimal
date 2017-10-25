@@ -1,10 +1,16 @@
 import strutils, math, bigints
 
 type
+  Rounding* = enum
+    RoundDown, RoundHalfUp, RoundHalfEven,
+    RoundCeiling, RoundFloor, RoundHalfDown,
+    RoundUp, Round05Up
   Decimal* = object
-    sign*: int
+    sign*, exponent*: int
     coefficient*: BigInt
-    exponent*: int
+  Context* = object
+    precision*, flags*, traps*: int
+    rounding*: Rounding
 
 proc newDecimal*(number: string): Decimal =
   var 
