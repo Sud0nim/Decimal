@@ -468,17 +468,17 @@ proc `<`*(a, b: Decimal): bool =
   result = 
     if a.coefficient == bigZero and b.coefficient == bigZero:
       false
-    elif b.sign > a.sign:
+    elif a.sign < b.sign:
       false
     elif b.coefficient * pow(bigTen, initBigInt(b.exponent)) > 
          a.coefficient * pow(bigTen, initBigInt(a.exponent)):
-      if a.sign == 1:
+      if b.sign == 1:
         false
       else:
         true
     elif b.coefficient * pow(bigTen, initBigInt(b.exponent)) < 
          a.coefficient * pow(bigTen, initBigInt(a.exponent)):
-      if a.sign == 1:
+      if b.sign == 1:
         true
       else:
         false
