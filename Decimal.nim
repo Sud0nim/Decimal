@@ -588,6 +588,22 @@ proc max*(a, b: Decimal): Decimal =
 proc min*(a, b: Decimal): Decimal =
   result = if a < b: a else: b
 
+proc minMagnitude*(a, b: Decimal): Decimal =
+  result =
+    if a.coefficient * pow(bigTen, initBigInt(a.exponent)) > 
+       b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      b
+    else:
+      a
+
+proc maxMagnitude*(a, b: Decimal): Decimal =
+  result =
+    if a.coefficient * pow(bigTen, initBigInt(a.exponent)) > 
+       b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      a
+    else:
+      b
+
 # Tests to ensure nothing breaks:
 
 #[ 
