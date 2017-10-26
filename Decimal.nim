@@ -577,7 +577,11 @@ proc compare*(a, b: Decimal): int =
       1
     else:
       0
-      
+
+proc divideInteger(a, b: Decimal): BigInt =
+  result = (a.coefficient * pow(initBigInt(10), initBigInt(a.exponent))) div 
+    (b.coefficient * pow(initBigInt(10), initBigInt(b.exponent)))
+
 # Tests to ensure nothing breaks:
 
 #[ 
