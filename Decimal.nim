@@ -16,6 +16,11 @@ type
     rounding*: Rounding
     flags*, traps*: seq[Signal]
 
+const 
+  bigZero = initBigInt(0)
+  bigTen = initBigInt(10)
+  defaultContext = Context(precision: 9, rounding: RoundHalfUp)
+
 proc newDecimal*(number: string): Decimal =
   var 
     inputString = number
@@ -159,7 +164,6 @@ proc `*`*(a: BigInt, b: Decimal): Decimal =
 
 proc `/`*(a, b: Decimal): Decimal =
   var
-    zero = initBigInt(0)
     precision = 15 # replace with a context object
     quotient, remainder: BigInt
     sign = a.sign * b.sign 
@@ -171,8 +175,8 @@ proc `/`*(a, b: Decimal): Decimal =
   else:
     quotient = a.coefficient div (b.coefficient * pow(initBigInt(10), initBigInt(-1 * shift)))
     remainder = a.coefficient mod (b.coefficient * pow(initBigInt(10), initBigInt(-1 * shift))) 
-  if remainder != zero:
-    if quotient mod 5 == zero:
+  if remainder != bigZero:
+    if quotient mod 5 == bigZero:
       quotient = quotient + 1
   result.sign = sign
   result.coefficient = quotient
@@ -333,13 +337,16 @@ proc pow*(a: Decimal, b: int): Decimal =
     result = newDecimal(1)
 
 proc `==`*(a, b: Decimal): bool =
-  if a.coefficient != b.coefficient:
-    return false
-  elif a.sign != b.sign:
-    return false
-  elif a.exponent != b.exponent:
-    return false
-  return true
+  result = 
+    if a.coefficient == bigZero and b.coefficient == bigZero:
+      true
+    elif a.sign != b.sign:
+      false
+    elif a.coefficient * pow(bigTen, initBigInt(a.exponent)) == 
+         b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      true
+    else:
+      false
 
 proc `!=`*(a, b: Decimal): bool =
   if a == b:
@@ -348,16 +355,25 @@ proc `!=`*(a, b: Decimal): bool =
     result = true
 
 proc `>`*(a, b: Decimal): bool =
-  if a.sign > b.sign:
-    return false
-  if abs(a.exponent) > abs(b.exponent):
-    let normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.coefficient > normalisedBCoefficient
-  elif abs(a.exponent) < abs(b.exponent):
-    let normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedACoefficient > b.coefficient
-  else:
-    result = a.coefficient > b.coefficient
+  result = 
+    if a.coefficient == bigZero and b.coefficient == bigZero:
+      false
+    elif a.sign > b.sign:
+      false
+    elif a.coefficient * pow(bigTen, initBigInt(a.exponent)) > 
+         b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      if a.sign == 1:
+        false
+      else:
+        true
+    elif a.coefficient * pow(bigTen, initBigInt(a.exponent)) < 
+         b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      if a.sign == 1:
+        true
+      else:
+        false
+    else:
+      false
 
 proc `>`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -394,16 +410,25 @@ proc `>`*(a: BigInt, b: Decimal): bool =
   result = aDecimal > b
 
 proc `>=`*(a, b: Decimal): bool =
-  if a.sign > b.sign:
-    return false
-  if abs(a.exponent) > abs(b.exponent):
-    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.coefficient >= normalisedBCoefficient
-  elif abs(a.exponent) < abs(b.exponent):
-    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedACoefficient >= b.coefficient
-  else:
-    result = a.coefficient >= b.coefficient
+  result = 
+    if a.coefficient == bigZero and b.coefficient == bigZero:
+      true
+    elif a.sign > b.sign:
+      false
+    elif a.coefficient * pow(bigTen, initBigInt(a.exponent)) > 
+         b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      if a.sign == 1:
+        false
+      else:
+        true
+    elif a.coefficient * pow(bigTen, initBigInt(a.exponent)) < 
+         b.coefficient * pow(bigTen, initBigInt(b.exponent)):
+      if a.sign == 1:
+        true
+      else:
+        false
+    else:
+      true
 
 proc `>=`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -440,16 +465,25 @@ proc `>=`*(a: BigInt, b: Decimal): bool =
   result = aDecimal >= b
 
 proc `<`*(a, b: Decimal): bool =
-  if a.sign < b.sign:
-    return false
-  if abs(a.exponent) > abs(b.exponent):
-    var normalisedBCoefficient = b.coefficient * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-    result = a.coefficient < normalisedBCoefficient
-  elif abs(a.exponent) < abs(b.exponent):
-    var normalisedACoefficient = a.coefficient * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-    result = normalisedACoefficient < b.coefficient
-  else:
-    result = a.coefficient < b.coefficient
+  result = 
+    if a.coefficient == bigZero and b.coefficient == bigZero:
+      false
+    elif b.sign > a.sign:
+      false
+    elif b.coefficient * pow(bigTen, initBigInt(b.exponent)) > 
+         a.coefficient * pow(bigTen, initBigInt(a.exponent)):
+      if a.sign == 1:
+        false
+      else:
+        true
+    elif b.coefficient * pow(bigTen, initBigInt(b.exponent)) < 
+         a.coefficient * pow(bigTen, initBigInt(a.exponent)):
+      if a.sign == 1:
+        true
+      else:
+        false
+    else:
+      false
 
 proc `<`*(a: Decimal, b: int): bool =
   let bDecimal = newDecimal(b)
@@ -531,14 +565,19 @@ proc `<=`*(a: BigInt, b: Decimal): bool =
   let aDecimal = newDecimal(a)
   result = aDecimal <= b
   
-proc setPrecision(a: var Decimal, precision: int) =
-  var multiplier = precision + a.exponent
-  if multiplier >= 0:
-    a.coefficient = a.coefficient * pow(initBigInt(10), initBigInt(multiplier))
-  else:
-    a.coefficient = a.coefficient div pow(initBigInt(10), initBigInt(-1 * multiplier))
-  a.exponent = a.exponent - multiplier
-  
+proc abs*(a: Decimal): Decimal =
+  result = a
+  result.sign = 0
+
+proc compare*(a, b: Decimal): int =
+  result = 
+    if a < b: 
+      -1
+    elif a > b:
+      1
+    else:
+      0
+      
 # Tests to ensure nothing breaks:
 
 #[ 
