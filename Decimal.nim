@@ -585,6 +585,9 @@ proc divideInteger*(a, b: Decimal): BigInt =
 proc max*(a, b: Decimal): Decimal =
   result = if a > b: a else: b
 
+proc min*(a, b: Decimal): Decimal =
+  result = if a < b: a else: b
+
 # Tests to ensure nothing breaks:
 
 #[ 
