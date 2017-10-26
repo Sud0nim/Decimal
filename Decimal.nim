@@ -166,7 +166,7 @@ proc `/`*(a, b: Decimal): Decimal =
   var
     precision = 15 # replace with a context object
     quotient, remainder: BigInt
-    sign = a.sign * b.sign 
+    sign = a.sign ^ b.sign 
     shift = len($b.coefficient) - len($a.coefficient) + precision + 1
     exp = a.exponent - b.exponent - shift
   if shift >= 0:
