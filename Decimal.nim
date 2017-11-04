@@ -84,29 +84,24 @@ proc `toDecimalString`*(number: Decimal): string =
     for i in 0..<trailingZeros:
       result = result & "0"
 
-proc toScientificString*(number: Decimal): string = 
+proc toScientificString*(a: Decimal): string =
   var
-    precision = 28
-    value = $number.coefficient
-    leftside = value[0]
-    rightside, exp: string
-    expSign = "+"
-    leftdigits = number.exponent + value.len
-  if precision > value.len:
-    rightside = value[1..value.high]
+    coefficient = $a.coefficient
+    adjustedExponent = a.exponent + (coefficient.len - 1)
+  if a.exponent <= 0 and adjustedExponent >= -6:
+    if a.exponent == 0:
+      result = coefficient
+    else:
+      if adjustedExponent < 0:
+        result = "0." & repeat('0', abs(a.exponent) - coefficient.len) & coefficient
+      elif adjustedExponent >= 0:
+        result = coefficient[0..adjustedExponent] & "." & coefficient[adjustedExponent+1 .. coefficient.high]
   else:
-    rightside = value[1..<(precision)]
-  var 
-    sign = ""
-  if number.sign == 1:
-    sign = "-"
-  if leftdigits == 1:
-    exp = ""
-  if number.exponent < 0:
-    expSign = "-"
-  else:
-    exp = "E" & expSign & $(leftdigits-1)
-  result = sign & leftside & "." & rightside & exp
+    if coefficient.len > 1:
+      result = coefficient[0] & "." & coefficient[1..coefficient.high] & "E" & $adjustedExponent
+    else:
+      result = coefficient & "E" & $adjustedExponent
+  result = ["", "-"][a.sign] & result
 
 proc `$`*(number: Decimal): string =
   var
