@@ -77,16 +77,6 @@ proc toScientificString*(a: Decimal): string =
       result = coefficient & "E" & $adjustedExponent
   result = ["", "-"][a.sign] & result
 
-proc `$`*(number: Decimal): string =
-  var
-    value = $number.coefficient
-    numberLength = value.len + abs(value.len + number.exponent)
-    precision = 28
-  if number.exponent == 0 and value.len < precision:
-    result = number.toDecimalString
-  else:
-    result = number.toScientificString
-
 proc toEngineeringString*(a: Decimal): string =
   var
     coefficient = $a.coefficient
@@ -111,8 +101,11 @@ proc toEngineeringString*(a: Decimal): string =
       result = coefficient & "E" & $adjustedExponent
   result = ["", "-"][a.sign] & result
 
+proc `$`*(number: Decimal): string =
+  result = number.toScientificString
+
 proc `echo`*(number: Decimal) =
-  echo $number
+  echo number.toScientificString
 
 proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
