@@ -58,32 +58,6 @@ proc newDecimal*(number: BigInt): Decimal =
   result.coefficient = number
   result.exponent = 0
 
-proc `toDecimalString`*(number: Decimal): string =
-  var
-    value = $number.coefficient
-    precision = 28
-    sign = ["", "-"][number.sign]
-    decimalPosition = value.len + number.exponent
-    trailingZeros = precision
-  if number.exponent < 0:
-    trailingZeros = trailingZeros + number.exponent
-  #if number.sign == 1:
-  #  sign = "-"
-  if decimalPosition < 0:
-    result = value[decimalPosition..value.high]
-    for i in 0..<abs(decimalPosition):
-      result = "0" & result
-    result = "0" & "." & result
-  else:
-    result = value[0..<decimalPosition]
-    for i in 0..<(decimalPosition - value.len):
-      result = result & "0"
-    result = result & "." #& value[decimalPosition..value.high]
-  result = sign & result
-  if trailingZeros > 0:
-    for i in 0..<trailingZeros:
-      result = result & "0"
-
 proc toScientificString*(a: Decimal): string =
   var
     coefficient = $a.coefficient
@@ -112,6 +86,30 @@ proc `$`*(number: Decimal): string =
     result = number.toDecimalString
   else:
     result = number.toScientificString
+
+proc toEngineeringString*(a: Decimal): string =
+  var
+    coefficient = $a.coefficient
+    adjustedExponent = a.exponent + (coefficient.len - 1)
+  if a.exponent <= 0 and adjustedExponent >= -6:
+    if a.exponent == 0:
+      result = coefficient
+    else:
+      if adjustedExponent < 0:
+        result = "0." & repeat('0', abs(a.exponent) - coefficient.len) & coefficient
+      elif adjustedExponent >= 0:
+        result = coefficient[0..adjustedExponent] & "." & coefficient[adjustedExponent+1 .. coefficient.high]
+  else:
+    var
+      modulus = 3 - abs(adjustedExponent mod 3)
+      adjustedExponent = if modulus == 3: adjustedExponent else: adjustedExponent - modulus
+      decimalPosition: int = 1 + abs(modulus)
+    if coefficient.len >= decimalPosition:
+      var rightPart = coefficient[decimalPosition..coefficient.high]
+      result = coefficient[0..<decimalPosition] & "." & rightPart & "E" & $adjustedExponent
+    else:
+      result = coefficient & "E" & $adjustedExponent
+  result = ["", "-"][a.sign] & result
 
 proc `echo`*(number: Decimal) =
   echo $number
