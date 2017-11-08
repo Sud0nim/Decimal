@@ -602,6 +602,16 @@ proc maxMagnitude*(a, b: Decimal): Decimal =
     else:
       b
 
+# Logical Operations
+
+proc isLogical*(a: Decimal): bool =
+  if a.sign != 0 or a.exponent != 0:
+    return false
+  for number in $a.coefficient:
+    if number notin {'0'..'1'}:
+      return false
+  true
+
 # Tests to ensure nothing breaks:
 
 #[ 
