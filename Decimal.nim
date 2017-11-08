@@ -148,6 +148,18 @@ proc `*`*(a: BigInt, b: Decimal): Decimal =
   result.sign = b.sign xor result.sign
   result.coefficient = b.coefficient * result.coefficient
 
+proc `^`(base, exp: int): int =
+  # Only use positive integers
+  var 
+    b = base
+    e = exp
+  result = 1
+  while e != 0:
+    if (e and 1) != 0:
+        result *= b
+    e = e shr 1
+    b *= b
+
 proc `/`*(a, b: Decimal): Decimal =
   var
     precision = 15 # replace with a context object
