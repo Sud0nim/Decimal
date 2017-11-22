@@ -43,11 +43,9 @@ proc roundDown*(coefficient: string, precision: int): int =
       result = -1
 
 proc roundUp*(coefficient: string, precision: int): int =
-  # Rounds away from 0
   result = -roundDown(coefficient, precision)
 
 proc roundHalfUp*(coefficient: string, precision: int): int =
-  # Rounds 5 up (away from 0)
   if coefficient[context.precision] in {'5', '6', '7', '8', '9'}:
       result = 1
   elif allZeros(coefficient, precision):
@@ -56,7 +54,6 @@ proc roundHalfUp*(coefficient: string, precision: int): int =
       result = -1
 
 proc roundHalfDown*(coefficient: string, precision: int): int =
-  # Round 5 down
   if exactHalf(coefficient, precision):
     result = -1
   else:
