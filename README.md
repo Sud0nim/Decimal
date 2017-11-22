@@ -1,5 +1,5 @@
-# BigDecimal
-An attempt to build a native BigDecimal class in Nim off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
+# Decimal
+An attempt to build a native (Big)Decimal class in Nim off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
 
 This is highly experimental and I have no experience in actually building a decimal class. Please use at your own risk, but feel free to contribute.
 
@@ -9,10 +9,10 @@ Input:
 
     var
       x = newDecimal("112777777777777777777777777444444111111111111111111111111111111111444444444444444444444444777779999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999934.0")
-      y = newDecimal("1244444444444442222222222222222222222444444444444422.0")
-      z = newDecimal("999999999999.121212")
-      a = newDecimal("10121212.121212112121212214678990")
-      b = newDecimal("-1000.000000000000000121271727234552727474654252562")
+      y = initDecimal("1244444444444442222222222222222222222444444444444422.0")
+      z = initDecimal("999999999999.121212")
+      a = initDecimal("10121212.121212112121212214678990")
+      b = initDecimal("-1000.000000000000000121271727234552727474654252562")
   
     echo x / y
     echo y / z
@@ -44,8 +44,8 @@ Output:
 Input:
 
     var
-      a = newDecimal("-5.975543")
-      b = newDecimal("1224.49948")
+      a = initDecimal("-5.975543")
+      b = initDecimal("1224.49948")
     echo "-5.975543 ^ -5 = ", a ^ -5
     echo "1224.49948 ^ 93 = ", pow(b, 93)
 
