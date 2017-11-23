@@ -1,4 +1,6 @@
-import strutils, math, bigints
+import strutils except toLower
+import math, bigints
+from unicode import toLower
 
 type
   Rounding* = enum
@@ -35,6 +37,12 @@ proc exactHalf(coefficient: string, precision: int): bool =
     if number != '0':
       return false
   return true
+
+proc isScientific(numericalString: string): bool =
+  result = false
+  for number in numericalString:
+    if number in {'e', 'E'}:
+      result = true
 
 proc roundDown*(coefficient: string, precision: int): int =
   if allZeros(coefficient, precision):
@@ -96,22 +104,44 @@ proc round*(a: var Decimal, roundingType: Rounding = RoundHalfEven,
     a.coefficient = initBigInt()
  ]#
 
-proc initDecimal*(number: string): Decimal =
-  var 
-    inputString = number
-  if inputString.startsWith("-"):
-    result.sign = 1
-    inputString = inputString[1..inputString.high]
+proc parseSign(numericalString: var string): int =
+  if numericalString.startsWith("-"):
+    numericalString = numericalString[1..numericalString.high]
+    result = 1
   else:
-    result.sign = 0
-  let
-    components = inputString.split('.', maxsplit = 1)
-  if components.len == 1:
-    result.coefficient = components[0]
-    result.exponent = 0
+    result = 0
+
+proc parseDecimalExponent(numericalString: var string): int =
+  let numberParts = numericalString.split('.')
+  if numberParts.len == 1:
+    result = 0
+  elif numberParts.len == 2:
+    numericalString =  numberParts[0] & numberParts[1]
+    result = numberParts[1].len * -1
   else:
-    result.coefficient =  components[0] & components[1]
-    result.exponent = components[1].len * -1 
+    raise newException(IOError, "Invalid numerical string format.")
+
+proc parseScientificExponent(numericalString: var string): int =
+  let numberParts = toLower(numericalString).split('e')
+  if numberParts.len == 2:
+    numericalString = numberParts[0]
+    result = parseInt(numberParts[1])
+  else:
+    raise newException(IOError, "Invalid scientific string format.")
+
+proc parseExponent(numericalString: var string): int =
+  if numericalString.isScientific():
+    result = parseScientificExponent(numericalString)
+  else:
+    result = parseDecimalExponent(numericalString)
+
+proc toNumber*(numericalString: string): Decimal =
+  result.coefficient = numericalString
+  result.sign = parseSign(result.coefficient)
+  result.exponent = parseExponent(result.coefficient)
+  
+proc initDecimal*(numericalString: string): Decimal =
+  result = toNumber(numericalString)
     
 proc initDecimal*(number: SomeNumber): Decimal =
   result = initDecimal($number)
