@@ -117,6 +117,7 @@ proc parseDecimalExponent(numericalString: var string): int =
     result = 0
   elif numberParts.len == 2:
     numericalString =  numberParts[0] & numberParts[1]
+    numericalString = strip(numericalString, trailing = false, chars = {'0'})
     result = numberParts[1].len * -1
   else:
     raise newException(IOError, "Invalid numerical string format.")
