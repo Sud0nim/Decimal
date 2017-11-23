@@ -713,6 +713,6 @@ proc isLogical*(a: Decimal): bool =
   if a.sign != 0 or a.exponent != 0:
     return false
   for number in $a.coefficient:
-    if number notin {'0'..'1'}:
+    if number notin {'0', '1'}:
       return false
   true
