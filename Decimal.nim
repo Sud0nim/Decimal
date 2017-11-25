@@ -112,12 +112,12 @@ proc parseSign(numericalString: var string): int =
     result = 0
 
 proc parseDecimalExponent(numericalString: var string): int =
-  let numberParts = numericalString.split('.')
+  var numberParts = numericalString.split('.')
+  numberParts[0] = strip(numericalString, trailing = false, chars = {'0'})
   if numberParts.len == 1:
     result = 0
   elif numberParts.len == 2:
-    numericalString =  numberParts[0] & numberParts[1]
-    numericalString = strip(numericalString, trailing = false, chars = {'0'})
+    numericalString = numberParts[0] & numberParts[1]
     result = numberParts[1].len * -1
   else:
     raise newException(IOError, "Invalid numerical string format.")
@@ -126,6 +126,7 @@ proc parseScientificExponent(numericalString: var string): int =
   let numberParts = toLower(numericalString).split('e')
   if numberParts.len == 2:
     numericalString = numberParts[0]
+    discard parseDecimalExponent(numericalString)
     result = parseInt(numberParts[1])
   else:
     raise newException(IOError, "Invalid scientific string format.")
