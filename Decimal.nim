@@ -126,8 +126,8 @@ proc parseScientificExponent(numericalString: var string): int =
   let numberParts = toLower(numericalString).split('e')
   if numberParts.len == 2:
     numericalString = numberParts[0]
-    discard parseDecimalExponent(numericalString)
-    result = parseInt(numberParts[1])
+    result = parseDecimalExponent(numericalString)
+    result += parseInt(numberParts[1])
   else:
     raise newException(IOError, "Invalid scientific string format.")
 
