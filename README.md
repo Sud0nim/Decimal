@@ -19,8 +19,9 @@ The design is inspired by the CPython implementation of Decimal and the IBM Deci
 - [ ] Create extensive test suite
 - [ ] Ensure that this package complies with the Decimal Arithmetic Specification, version 1.70 
 
+# Usage
 
-# Basic arithmetic operations:
+**Basic arithmetic operations**
 
 ```nim
 var
@@ -51,7 +52,7 @@ echo a - b
 # 10122212.121212112121212335950717234552727474654252562
 ```
     
-# Exponential calculations
+**Exponential calculations**
 
 ```nim
 var
