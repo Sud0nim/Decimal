@@ -194,7 +194,8 @@ proc toScientificString*(a: Decimal): string =
         result = a.coefficient[0..adjustedExponent] & "." & a.coefficient[adjustedExponent+1 .. a.coefficient.high]
   else:
     if a.coefficient.len > 1:
-      result = a.coefficient[0] & "." & a.coefficient[1..a.coefficient.high] & "E" & $adjustedExponent
+      let exponentSign = if adjustedExponent > 0: "+" else: ""
+      result = a.coefficient[0] & "." & a.coefficient[1..a.coefficient.high] & "E" & exponentSign & $adjustedExponent
     else:
       result = a.coefficient & "E" & $adjustedExponent
   result = ["", "-"][a.sign] & result
