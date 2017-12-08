@@ -1,7 +1,24 @@
 # Decimal
-An attempt to build a native (Big)Decimal class in Nim off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
+A native, big/arbitrary precision Decimal class in pure Nim built off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
 
-This is highly experimental and I have no experience in actually building a decimal class. Please use at your own risk, but feel free to contribute.
+The design is inspired by the CPython implementation of Decimal and the IBM Decimal Arithmetic Specification (http://speleotrove.com/decimal/decarith.html).
+
+# Progress:
+
+- [x] Settle on object design and enums
+- [x] MVP object initialisation procs for various inputs (string, int, bigint, float)
+- [x] Basic arithmetic (plus, minus, divide, multiply)
+- [x] Number to Decimal String 
+- [x] Number to Scientific String
+- [ ] Number to Engineering String
+- [x] Boolean operators
+- [ ] Create the remainder of required procedures shown in http://speleotrove.com/decimal/daops.html
+- [ ] Add all major rounding rules
+- [ ] Add context object for precision and rounding
+- [ ] Ensure a reasonable level of error handling
+- [ ] Create extensive test suite
+- [ ] Ensure that this package complies with the Decimal Arithmetic Specification, version 1.70 
+
 
 # Some preliminary tests of arithmetic with arbitrary precision decimal types:
 
