@@ -1,5 +1,5 @@
 # Decimal
-A native, big/arbitrary precision Decimal class in pure Nim built off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
+A big/arbitrary precision Decimal class in pure Nim built off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
 
 The design is inspired by the CPython implementation of Decimal and the IBM Decimal Arithmetic Specification (http://speleotrove.com/decimal/decarith.html).
 
