@@ -1,10 +1,1 @@
-1. Add a context object for precision and rounding
-2. Create all major rounding rules
-3. Make conform with IEEE standards
-4. Test, test, test.
-5. Work on performance - strings vs bigint testing.
-6. More init types accepted
-7. Test, test, test some more
-8. Error handling / exceptions
-9. More advanced math functions
-10. Scientific notation and any other output/formatting options
+
