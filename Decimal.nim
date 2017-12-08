@@ -38,11 +38,25 @@ proc exactHalf(coefficient: string, precision: int): bool =
       return false
   return true
 
-proc isScientific(numericalString: string): bool =
+proc isScientificString(numericalString: string): bool =
   result = false
   for number in numericalString:
     if number in {'e', 'E'}:
       result = true
+      
+proc isDecimalString(numericalString: string): bool =
+  result = true
+  var dotCount = 0
+  for number in strip(numericalString.replace(",",""), 
+                      trailing = false, 
+                      chars = {'+', '-'}):
+    if number notin {'.','1','2','3','4','5','6','7','8','9','0'}:
+      return false
+    if number == '.':
+      if dotCount > 0:
+        return false
+      else:
+        dotCount += 1
 
 proc roundDown*(coefficient: string, precision: int): int =
   if allZeros(coefficient, precision):
@@ -141,10 +155,12 @@ proc parseScientificExponent(numericalString: var string): int =
     raise newException(IOError, "Invalid scientific string format.")
 
 proc parseExponent(numericalString: var string): int =
-  if numericalString.isScientific():
+  if numericalString.isScientificString():
     result = parseScientificExponent(numericalString)
-  else:
+  elif numericalString.isDecimalString():
     result = parseDecimalExponent(numericalString)
+  else:
+    raise newException(IOError, "Unknown string format.")
 
 proc toNumber*(numericalString: string): Decimal =
   result.coefficient = numericalString
