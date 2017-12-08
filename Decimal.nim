@@ -104,6 +104,15 @@ proc round*(a: var Decimal, roundingType: Rounding = RoundHalfEven,
     a.coefficient = initBigInt()
  ]#
 
+proc normalise(decimal: var Decimal) =
+  let coefficientLength = decimal.coefficient.len()
+  decimal.coefficient = strip(decimal.coefficient, 
+                           leading = false, 
+                           trailing = true, 
+                           chars = {'0'})
+  let strippedLength = decimal.coefficient.len()
+  decimal.exponent = decimal.exponent + (coefficientLength - strippedLength)
+
 proc parseSign(numericalString: var string): int =
   if numericalString.startsWith("-"):
     numericalString = numericalString[1..numericalString.high]
@@ -275,6 +284,7 @@ proc `/`*(a, b: Decimal): Decimal =
   result.sign = sign
   result.coefficient = $quotient
   result.exponent = exp
+  result.normalise
 
 proc `/`*(a: Decimal, b: int): Decimal =
   result = initDecimal(b)
