@@ -38,25 +38,31 @@ proc exactHalf(coefficient: string, precision: int): bool =
       return false
   return true
 
-proc isScientificString(numericalString: string): bool =
-  result = false
-  for number in numericalString:
-    if number in {'e', 'E'}:
-      result = true
-      
 proc isDecimalString(numericalString: string): bool =
-  result = true
   var dotCount = 0
-  for number in strip(numericalString.replace(",",""), 
+  for number in strip(numericalString.replace(",","").replace("_",""), 
                       trailing = false, 
                       chars = {'+', '-'}):
     if number notin {'.','1','2','3','4','5','6','7','8','9','0'}:
       return false
     if number == '.':
-      if dotCount > 0:
-        return false
-      else:
-        dotCount += 1
+      dotCount += 1
+    if dotCount > 1:
+      return false
+  result = true
+
+proc isScientificString(numericalString: string): bool = 
+  var 
+    dotCount = 0
+    stringParts = numericalString.toLower().split('e')
+  if stringParts.len() != 2:
+    return false
+  if not stringParts[0].isDecimalString():
+    return false
+  for number in strip(stringParts[1], trailing=false, chars={'+','-'}):
+    if number notin {'1','2','3','4','5','6','7','8','9','0'}:
+      return false
+  result = true
 
 proc roundDown*(coefficient: string, precision: int): int =
   if allZeros(coefficient, precision):
