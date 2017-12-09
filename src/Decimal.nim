@@ -25,10 +25,10 @@ const
   context = Context(precision: 9, rounding: RoundHalfUp)
 
 proc allZeros(coefficient: string, precision: int): bool =
-  result = true
   for number in coefficient[precision..coefficient.high]:
     if number != '0':
-      result = false
+      return false
+  result = true
 
 proc exactHalf(coefficient: string, precision: int): bool =
   if coefficient[precision] != '5':
@@ -36,7 +36,7 @@ proc exactHalf(coefficient: string, precision: int): bool =
   for number in coefficient[precision+1..coefficient.high]:
     if number != '0':
       return false
-  return true
+  result = true
 
 proc isDecimalString(numericalString: string): bool =
   var dotCount = 0
