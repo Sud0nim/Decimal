@@ -138,40 +138,48 @@ proc parseSign(numericalString: var string): int =
     numericalString = numericalString[1..numericalString.high]
     result = 1
   else:
+    if numericalString.startsWith("+"):
+      numericalString = numericalString[1..numericalString.high]
     result = 0
 
-proc parseDecimalExponent(numericalString: var string): int =
+proc parseDecimalString(numericalString: var string): int =
   var numberParts = numericalString.split('.')
   if numberParts.len == 1:
     result = 0
   elif numberParts.len == 2:
     numericalString = numberParts[0] & numberParts[1]
-    numericalString = strip(numericalString, trailing = false, chars = {'0'})
+    numericalString = strip(numericalString, trailing=false, chars={'0'})
     result = numberParts[1].len * -1
   else:
     raise newException(IOError, "Invalid numerical string format.")
 
-proc parseScientificExponent(numericalString: var string): int =
+proc parseScientificString(numericalString: var string): int =
   let numberParts = toLower(numericalString).split('e')
   if numberParts.len == 2:
     numericalString = numberParts[0]
-    result = parseDecimalExponent(numericalString)
+    result = parseDecimalString(numericalString)
     result += parseInt(numberParts[1])
   else:
     raise newException(IOError, "Invalid scientific string format.")
 
-proc parseExponent(numericalString: var string): int =
-  if numericalString.isScientificString():
-    result = parseScientificExponent(numericalString)
-  elif numericalString.isDecimalString():
-    result = parseDecimalExponent(numericalString)
+proc parseSpecialString(numericalString: var string): int =
+  if numericalString.tolower() in ["inf", "infinity"]:
+    numericalString = "inf"
+  elif numericalString.tolower() == "snan":
+    numericalString = "sNaN"
   else:
-    raise newException(IOError, "Unknown string format.")
+    numericalString = "qNaN"
+  result = 0
 
 proc toNumber*(numericalString: string): Decimal =
   result.coefficient = numericalString
   result.sign = parseSign(result.coefficient)
-  result.exponent = parseExponent(result.coefficient)
+  if numericalString.isDecimalString():
+    result.exponent = parseDecimalString(result.coefficient)
+  elif numericalString.isScientificString():
+    result.exponent = parseScientificString(result.coefficient)
+  else:
+    result.exponent = parseSpecialString(result.coefficient)
   
 proc initDecimal*(numericalString: string): Decimal =
   result = toNumber(numericalString)
