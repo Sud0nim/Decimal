@@ -195,6 +195,9 @@ proc initDecimal*(number: BigInt): Decimal =
   result.coefficient = $number
   result.exponent = 0
 
+proc initDecimal*(number: Decimal): Decimal =
+  result = number
+
 proc toScientificString*(a: Decimal): string =
   var
     adjustedExponent = a.exponent + (a.coefficient.len - 1)
