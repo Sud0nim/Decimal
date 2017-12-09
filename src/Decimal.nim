@@ -74,7 +74,7 @@ proc roundUp*(coefficient: string, precision: int): int =
   result = -roundDown(coefficient, precision)
 
 proc roundHalfUp*(coefficient: string, precision: int): int =
-  if coefficient[context.precision] in {'5', '6', '7', '8', '9'}:
+  if coefficient[context.precision] in {'5','6','7','8','9'}:
       result = 1
   elif allZeros(coefficient, precision):
       result = 0
@@ -90,7 +90,7 @@ proc roundHalfDown*(coefficient: string, precision: int): int =
 proc roundHalfEven*(coefficient: string, precision: int): int =
   if exactHalf(coefficient, precision) and 
        (precision == 0 or 
-       coefficient[precision-1] in {'0', '2', '4', '6', '8'}):
+       coefficient[precision-1] in {'0','2','4','6','8'}):
     result = -1
   else:
     result = roundHalfUp(coefficient, precision)
@@ -102,8 +102,8 @@ proc roundFloor*(coefficient: string, precision: int): int =
   result = roundDown(coefficient, precision)
 
 proc round05Up*(coefficient: string, precision: int): int =
-  if coefficient[precision-1] notin {'0', '5'} and
-    $precision notin ["0", "5"]:
+  if coefficient[precision-1] notin {'0','5'} and
+    $precision notin ["0","5"]:
       result = roundDown(coefficient, precision)
   else:
       result = -roundDown(coefficient, precision)
