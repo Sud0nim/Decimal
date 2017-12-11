@@ -74,7 +74,7 @@ proc roundUp*(a: Decimal, precision: int): int =
   result = -roundDown(a, precision)
 
 proc roundHalfUp*(a: Decimal, precision: int): int =
-  if a.coefficient[context.precision] in {'5','6','7','8','9'}:
+  if a.coefficient[precision] in {'5','6','7','8','9'}:
       result = 1
   elif allZeros(a.coefficient, precision):
       result = 0
@@ -96,16 +96,16 @@ proc roundHalfEven*(a: Decimal, precision: int): int =
     result = roundHalfUp(a, precision)
 
 proc roundCeiling*(a: Decimal, precision: int): int =
-  if a.sign == 1:
-    result = roundDown(a, precision)
+  if a.sign == 1 or allZeros(a.coefficient, precision):
+    result = 0
   else:
-    result = -roundDown(a, precision)
+    result = 1
 
 proc roundFloor*(a: Decimal, precision: int): int =
-  if a.sign == 1:
-    result = -roundDown(a, precision)
+  if a.sign == 0 or allZeros(a.coefficient, precision):
+    result = 0
   else:
-    result = roundDown(a, precision)
+    result = 1
 
 proc round05Up*(a: Decimal, precision: int): int =
   if a.coefficient[precision-1] notin {'0','5'} and
@@ -114,25 +114,27 @@ proc round05Up*(a: Decimal, precision: int): int =
   else:
       result = -roundDown(a, precision)
 
-let roundingProcs = [roundDown, roundUp, roundHalfUp, roundHalfDown,
-                     roundHalfEven, roundCeiling, roundFloor, round05Up]
+let roundingProcs = [roundDown, roundHalfUp, roundHalfEven, roundCeiling,
+                     roundFloor, roundHalfDown, roundUp, round05Up]
 
-proc round*(a: var Decimal, roundingType: Rounding = RoundHalfEven,
+proc round*(a: var Decimal, roundingType: Rounding,
             precision: int) =
   let coefficientLength = len(a.coefficient)
   if coefficientLength <= precision:
     return
   else:
-    a.coefficient = a.coefficient[0..precision]
     var
       rounding = roundingProcs[ord(roundingType)](a, precision)
+    a.coefficient = a.coefficient[0..<precision]
     if rounding > 0:
-      a.coefficient = $(initBigInt($a.coefficient)+1)
+      echo a.coefficient
+      a.coefficient = $(initBigInt(a.coefficient)+1)
+      echo a.coefficient
     if len(a.coefficient) > precision:
       a.coefficient = a.coefficient[0..<precision]
     a.exponent += coefficientLength - len(a.coefficient)
 
-proc normalise(decimal: var Decimal) =
+proc reduce(decimal: var Decimal) =
   let coefficientLength = decimal.coefficient.len()
   decimal.coefficient = strip(decimal.coefficient, 
                            leading = false, 
@@ -326,7 +328,7 @@ proc `/`*(a, b: Decimal): Decimal =
   result.sign = sign
   result.coefficient = $quotient
   result.exponent = exp
-  result.normalise
+  result.reduce
 
 proc `/`*(a: Decimal, b: int): Decimal =
   result = initDecimal(b)
