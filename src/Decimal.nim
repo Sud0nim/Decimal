@@ -64,65 +64,73 @@ proc isScientificString(numericalString: string): bool =
       return false
   result = true
 
-proc roundDown*(coefficient: string, precision: int): int =
-  if allZeros(coefficient, precision):
+proc roundDown*(a: Decimal, precision: int): int =
+  if allZeros(a.coefficient, precision):
       result = 0
   else:
       result = -1
 
-proc roundUp*(coefficient: string, precision: int): int =
-  result = -roundDown(coefficient, precision)
+proc roundUp*(a: Decimal, precision: int): int =
+  result = -roundDown(a, precision)
 
-proc roundHalfUp*(coefficient: string, precision: int): int =
-  if coefficient[context.precision] in {'5','6','7','8','9'}:
+proc roundHalfUp*(a: Decimal, precision: int): int =
+  if a.coefficient[context.precision] in {'5','6','7','8','9'}:
       result = 1
-  elif allZeros(coefficient, precision):
+  elif allZeros(a.coefficient, precision):
       result = 0
   else:
       result = -1
 
-proc roundHalfDown*(coefficient: string, precision: int): int =
-  if exactHalf(coefficient, precision):
+proc roundHalfDown*(a: Decimal, precision: int): int =
+  if exactHalf(a.coefficient, precision):
     result = -1
   else:
-    result = roundHalfUp(coefficient, precision)
+    result = roundHalfUp(a, precision)
 
-proc roundHalfEven*(coefficient: string, precision: int): int =
-  if exactHalf(coefficient, precision) and 
+proc roundHalfEven*(a: Decimal, precision: int): int =
+  if exactHalf(a.coefficient, precision) and 
        (precision == 0 or 
-       coefficient[precision-1] in {'0','2','4','6','8'}):
+       a.coefficient[precision-1] in {'0','2','4','6','8'}):
     result = -1
   else:
-    result = roundHalfUp(coefficient, precision)
+    result = roundHalfUp(a, precision)
 
-proc roundCeiling*(coefficient: string, precision: int): int =
-  result = roundDown(coefficient, precision)
-
-proc roundFloor*(coefficient: string, precision: int): int =
-  result = roundDown(coefficient, precision)
-
-proc round05Up*(coefficient: string, precision: int): int =
-  if coefficient[precision-1] notin {'0','5'} and
-    $precision notin ["0","5"]:
-      result = roundDown(coefficient, precision)
+proc roundCeiling*(a: Decimal, precision: int): int =
+  if a.sign == 1:
+    result = roundDown(a, precision)
   else:
-      result = -roundDown(coefficient, precision)
+    result = -roundDown(a, precision)
+
+proc roundFloor*(a: Decimal, precision: int): int =
+  if a.sign == 1:
+    result = -roundDown(a, precision)
+  else:
+    result = roundDown(a, precision)
+
+proc round05Up*(a: Decimal, precision: int): int =
+  if a.coefficient[precision-1] notin {'0','5'} and
+    $precision notin ["0","5"]:
+      result = roundDown(a, precision)
+  else:
+      result = -roundDown(a, precision)
 
 let roundingProcs = [roundDown, roundUp, roundHalfUp, roundHalfDown,
                      roundHalfEven, roundCeiling, roundFloor, round05Up]
 
-#[ TO BE COMPLETED
 proc round*(a: var Decimal, roundingType: Rounding = RoundHalfEven,
             precision: int) =
-  var rounding = roundingProcs[ord(roundingType)]($a.coefficient, 
-                                                  precision)
-  if (roundingType == RoundCeiling and a.sign == 0) or
-      roundingType == RoundFloor and a.sign == 1:
-    rounding = -rounding
-  if rounding == 1:
-    discard $a.coefficient[0..<precision]
-    a.coefficient = initBigInt()
- ]#
+  let coefficientLength = len(a.coefficient)
+  if coefficientLength <= precision:
+    return
+  else:
+    a.coefficient = a.coefficient[0..precision]
+    var
+      rounding = roundingProcs[ord(roundingType)](a, precision)
+    if rounding > 0:
+      a.coefficient = $(initBigInt($a.coefficient)+1)
+    if len(a.coefficient) > precision:
+      a.coefficient = a.coefficient[0..<precision]
+    a.exponent += coefficientLength - len(a.coefficient)
 
 proc normalise(decimal: var Decimal) =
   let coefficientLength = decimal.coefficient.len()
