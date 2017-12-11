@@ -13,7 +13,7 @@ The design is inspired by the CPython implementation of Decimal and the IBM Deci
 - [ ] Number to Engineering String
 - [x] Boolean operators
 - [ ] Create the remainder of required procedures shown in http://speleotrove.com/decimal/daops.html
-- [ ] Add all major rounding rules
+- [x] Add all major rounding rules
 - [ ] Add context object for precision and rounding
 - [ ] Ensure a reasonable level of error handling
 - [ ] Create extensive test suite
