@@ -13,6 +13,7 @@ type
   Decimal* = object
     sign*, exponent*: int
     coefficient*: string
+    isSpecial*: bool
   Context* = object
     precision*: int
     rounding*: Rounding
@@ -173,9 +174,10 @@ proc parseScientificString(numericalString: var string): int =
     raise newException(IOError, "Invalid scientific string format.")
 
 proc parseSpecialString(numericalString: var string): int =
-  if numericalString.tolower() in ["inf", "infinity"]:
+  numericalString = numericalString.tolower()
+  if numericalString in ["inf", "infinity"]:
     numericalString = "inf"
-  elif numericalString.tolower() == "snan":
+  elif numericalString == "snan":
     numericalString = "sNaN"
   else:
     numericalString = "qNaN"
@@ -184,26 +186,23 @@ proc parseSpecialString(numericalString: var string): int =
 proc toNumber*(numericalString: string): Decimal =
   result.coefficient = numericalString
   result.sign = parseSign(result.coefficient)
+  result.isSpecial = false
   if numericalString.isDecimalString():
     result.exponent = parseDecimalString(result.coefficient)
   elif numericalString.isScientificString():
     result.exponent = parseScientificString(result.coefficient)
   else:
     result.exponent = parseSpecialString(result.coefficient)
+    result.isSpecial = true
   
 proc initDecimal*(numericalString: string): Decimal =
   result = toNumber(numericalString)
     
 proc initDecimal*(number: SomeNumber): Decimal =
-  result = initDecimal($number)
+  result = toNumber($number)
 
 proc initDecimal*(number: BigInt): Decimal =
-  if number < 0:
-    result.sign = 1
-  else:
-    result.sign = 0
-  result.coefficient = $number
-  result.exponent = 0
+  result = toNumber($number)
 
 proc initDecimal*(number: Decimal): Decimal =
   result = number
