@@ -40,13 +40,15 @@ proc exactHalf(coefficient: string, precision: int): bool =
   result = true
 
 proc isDecimalString(numericalString: string): bool =
-  var dotCount = 0
-  for number in strip(numericalString.replace(",","").replace("_",""), 
-                      trailing = false, 
-                      chars = {'+', '-'}):
-    if number notin {'.','1','2','3','4','5','6','7','8','9','0'}:
+  var 
+    dotCount = 0
+    cleanedString = numericalString.replace(",","").replace("_","")
+  if cleanedString[0] in {'+', '-'}:
+    cleanedString = cleanedString[1..cleanedString.high]
+  for character in cleanedString:
+    if character notin {'.','1','2','3','4','5','6','7','8','9','0'}:
       return false
-    if number == '.':
+    if character == '.':
       dotCount += 1
     if dotCount > 1:
       return false
@@ -60,8 +62,10 @@ proc isScientificString(numericalString: string): bool =
     return false
   if not stringParts[0].isDecimalString():
     return false
-  for number in strip(stringParts[1], trailing=false, chars={'+','-'}):
-    if number notin {'1','2','3','4','5','6','7','8','9','0'}:
+  if stringParts[1][0] in {'+', '-'}:
+    stringParts[1] = stringParts[1][1..stringParts[1].high]
+  for character in stringParts[1]:
+    if character notin {'1','2','3','4','5','6','7','8','9','0'}:
       return false
   result = true
 
@@ -190,8 +194,7 @@ proc toNumber*(numericalString: string): Decimal =
   if result.coefficient.replace(".","").allZeros(0):
     result.coefficient = "0"
     result.exponent = 0
-    return result
-  if numericalString.isDecimalString():
+  elif numericalString.isDecimalString():
     result.exponent = parseDecimalString(result.coefficient)
   elif numericalString.isScientificString():
     result.exponent = parseScientificString(result.coefficient)
