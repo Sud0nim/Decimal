@@ -145,11 +145,11 @@ proc reduce(decimal: var Decimal) =
   decimal.exponent = decimal.exponent + (coefficientLength - strippedLength)
 
 proc parseSign(numericalString: var string): int =
-  if numericalString.startsWith("-"):
+  if numericalString[0] == '-':
     numericalString = numericalString[1..numericalString.high]
     result = 1
   else:
-    if numericalString.startsWith("+"):
+    if numericalString[0] == '+':
       numericalString = numericalString[1..numericalString.high]
     result = 0
 
