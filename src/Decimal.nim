@@ -187,6 +187,10 @@ proc toNumber*(numericalString: string): Decimal =
   result.coefficient = numericalString
   result.sign = parseSign(result.coefficient)
   result.isSpecial = false
+  if result.coefficient.replace(".","").allZeros(0):
+    result.coefficient = "0"
+    result.exponent = 0
+    return result
   if numericalString.isDecimalString():
     result.exponent = parseDecimalString(result.coefficient)
   elif numericalString.isScientificString():
