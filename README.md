@@ -3,12 +3,14 @@ A big/arbitrary precision Decimal class in pure Nim built off the back of the Ni
 
 The design is inspired by the CPython implementation of Decimal and the IBM Decimal Arithmetic Specification: http://speleotrove.com/decimal/decarith.html
 
+Note: for anyone wondering why this project is going through a large number of changes - while this implementation is inspired by the CPython version - I am not trying to make a drop-in copy of it, which should be easy-ish due to Nim syntax being very similar to Python syntax. Instead, as a learning exercise I am trying to work out each problem from the decimal arithmetic specification from scratch and then resort to the solution used in the Python version only if I can not solve the problem myself. This means that there might be a lot of tinkering to solve edge cases before this implementation is stabilised.
+
 # Progress:
 
 - [x] Settle on object design and enums
 - [x] MVP object initialisation procs for various inputs (string, int, bigint, float)
 - [x] Basic arithmetic (plus, minus, divide, multiply)
-- [x] Number to Decimal String 
+- [x] Number to Decimal String
 - [x] Number to Scientific String
 - [ ] Number to Engineering String
 - [x] Boolean operators
