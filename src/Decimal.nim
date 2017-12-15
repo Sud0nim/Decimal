@@ -161,10 +161,17 @@ proc parseDecimalString(numericalString: var string): int =
   var numberParts = numericalString.split('.')
   if numberParts.len == 1:
     result = 0
+    numericalString = strip(numericalString, trailing=false, chars={'0'})
+    if numericalString == "":
+      numericalString = "0"
   elif numberParts.len == 2:
     numericalString = numberParts[0] & numberParts[1]
-    numericalString = strip(numericalString, trailing=false, chars={'0'})
-    result = numberParts[1].len * -1
+    if numericalString.allZeros(0):
+      result = 1 - len(numericalString)
+      numericalString = "0"
+    else:
+      numericalString = strip(numericalString, trailing=false, chars={'0'})
+      result = numberParts[1].len * -1
   else:
     raise newException(IOError, "Invalid numerical string format.")
 
@@ -188,13 +195,12 @@ proc parseSpecialString(numericalString: var string): int =
   result = 0
 
 proc toNumber*(numericalString: string): Decimal =
+  if numericalString.len() == 0:
+    raise newException(IOError, "Invalid string format (empty string).")
   result.coefficient = numericalString
   result.sign = parseSign(result.coefficient)
   result.isSpecial = false
-  if result.coefficient.replace(".","").allZeros(0):
-    result.coefficient = "0"
-    result.exponent = 0
-  elif numericalString.isDecimalString():
+  if numericalString.isDecimalString():
     result.exponent = parseDecimalString(result.coefficient)
   elif numericalString.isScientificString():
     result.exponent = parseScientificString(result.coefficient)
