@@ -267,6 +267,28 @@ proc `$`*(number: Decimal): string =
 proc `echo`*(number: Decimal) =
   echo number.toScientificString
 
+proc normalise(a, b: Decimal, precision: int): tuple[a, b: Decimal] =
+  var dec1, dec2: Decimal
+  if a.exponent < b.exponent:
+    dec1 = b
+    dec2 = a
+  else:
+    dec1 = a
+    dec2 = b
+  var 
+    dec1Length = len(dec1.coefficient)
+    dec2Length = len(dec2.coefficient)
+    exponent = dec1.exponent + min(-1, dec1Length - precision - 2)
+  if dec2Length + dec2.exponent - 1 < exponent:
+    dec2.coefficient = "1"
+    dec2.exponent = exponent
+  dec1.coefficient = $(initBigInt(dec1.coefficient) * pow(bigTen, initBigInt(dec1.exponent - dec2.exponent)))
+  dec1.exponent = dec2.exponent
+  if a.exponent < b.exponent:
+    result = (dec2, dec1)
+  else:
+    result = (dec1, dec2)
+
 proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
@@ -351,67 +373,27 @@ proc `/`*(a: BigInt, b: Decimal): Decimal =
   result = result / b
 
 proc `+`*(a, b: Decimal): Decimal =
-  # TODO: Refactor out if/else nested in favour of simplified handling
-  if abs(a.exponent) > abs(b.exponent):
-    var 
-      bCoefficient = initBigInt(b.coefficient) * pow(initBigInt(10), initBigInt(abs(a.exponent - b.exponent)))
-      aCoefficient = initBigInt(a.coefficient)
-    if a.sign == b.sign:
-      result.sign = a.sign
-      result.coefficient = $(aCoefficient + bCoefficient)
-      result.exponent = a.exponent
+  var (aNormalised, bNormalised) = normalise(a, b, context.precision)
+  if aNormalised.sign != bNormalised.sign:
+    if initBigInt(aNormalised.coefficient) == initBigInt(bNormalised.coefficient):
+      return initDecimal("0")
+    if initBigInt(aNormalised.coefficient) < initBigInt(bNormalised.coefficient):
+      (aNormalised, bNormalised) = (bNormalised, aNormalised)
+    if aNormalised.sign == 1:
+      result.sign = 1
+      (aNormalised.sign, bNormalised.sign) = (bNormalised.sign, aNormalised.sign)
     else:
-      if aCoefficient > bCoefficient:
-        result.sign = a.sign
-        result.coefficient = $(aCoefficient - bCoefficient)
-        result.exponent = a.exponent
-      elif aCoefficient < bCoefficient:
-        result.sign = b.sign
-        result.coefficient = $(bCoefficient - aCoefficient)
-        result.exponent = a.exponent
-      else:
-        result.sign = 0
-        result.coefficient = $bigZero
-        result.exponent = 0
-  elif abs(a.exponent) < abs(b.exponent):
-    var 
-      aCoefficient = initBigInt(a.coefficient) * pow(initBigInt(10), initBigInt(abs(b.exponent - a.exponent)))
-      bCoefficient = initBigInt(b.coefficient)
-    if b.sign == a.sign:
-      result.sign = b.sign
-      result.coefficient = $(bCoefficient + aCoefficient)
-      result.exponent = b.exponent
-    else:
-      if bCoefficient > aCoefficient:
-        result.sign = b.sign
-        result.coefficient = $(bCoefficient - aCoefficient)
-        result.exponent = b.exponent
-      elif bCoefficient < aCoefficient:
-        result.sign = a.sign
-        result.coefficient = $(aCoefficient - bCoefficient)
-        result.exponent = b.exponent
-      else:
-        result.sign = 0
-        result.coefficient = $bigZero
-        result.exponent = 0
+      result.sign = 0
+  elif aNormalised.sign == 1:
+    result.sign = 1
+    (aNormalised.sign, bNormalised.sign) = (0, 0)
   else:
-    result.exponent = a.exponent
-    var
-      bCoefficient = initBigInt(b.coefficient)
-      aCoefficient = initBigInt(a.coefficient)
-    if a.sign == b.sign:
-      result.sign = a.sign
-      result.coefficient = $(aCoefficient + bCoefficient)
-    else:
-      if a.coefficient > b.coefficient:
-        result.sign = a.sign
-        result.coefficient = $(aCoefficient - bCoefficient)
-      elif a.coefficient < b.coefficient:
-        result.sign = b.sign
-        result.coefficient = $(bCoefficient - aCoefficient)
-      else:
-        result.sign = 0
-        result.coefficient = $bigZero
+    result.sign = 0
+  if bNormalised.sign == 0:
+    result.coefficient = $(initBigInt(aNormalised.coefficient) + initBigInt(bNormalised.coefficient))
+  else:
+    result.coefficient = $(initBigInt(aNormalised.coefficient) - initBigInt(bNormalised.coefficient))
+  result.exponent = aNormalised.exponent
   result.round(context.rounding, context.precision)
   result.reduce()
 
