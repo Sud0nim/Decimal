@@ -25,8 +25,8 @@ const
   bigTen = initBigInt(10)
   context = Context(precision: 28, rounding: RoundHalfEven)
 
-proc allZeros(coefficient: string, precision: int): bool =
-  for number in coefficient[precision..coefficient.high]:
+proc allZeros(numericalString: string, precision: int): bool =
+  for number in numericalString[precision..numericalString.high]:
     if number != '0':
       return false
   result = true
