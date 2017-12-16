@@ -139,7 +139,7 @@ proc round*(a: var Decimal, roundingType: Rounding,
 
 proc reduce(a: var Decimal) =
   var index = a.coefficient.len() - 1
-  while index > 0:
+  while index > context.precision:
     if a.coefficient[index] == '0':
       index -= 1
       a.exponent += 1
