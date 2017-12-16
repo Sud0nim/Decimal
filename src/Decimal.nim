@@ -23,7 +23,7 @@ const
   bigZero = initBigInt(0)
   bigOne = initBigInt(1)
   bigTen = initBigInt(10)
-  context = Context(precision: 9, rounding: RoundHalfUp)
+  context = Context(precision: 28, rounding: RoundHalfUp)
 
 proc allZeros(coefficient: string, precision: int): bool =
   for number in coefficient[precision..coefficient.high]:
@@ -132,21 +132,20 @@ proc round*(a: var Decimal, roundingType: Rounding,
       rounding = roundingProcs[ord(roundingType)](a, precision)
     a.coefficient = a.coefficient[0..<precision]
     if rounding > 0:
-      echo a.coefficient
       a.coefficient = $(initBigInt(a.coefficient)+1)
-      echo a.coefficient
     if len(a.coefficient) > precision:
       a.coefficient = a.coefficient[0..<precision]
     a.exponent += coefficientLength - len(a.coefficient)
 
-proc reduce(decimal: var Decimal) =
-  let coefficientLength = decimal.coefficient.len()
-  decimal.coefficient = strip(decimal.coefficient, 
-                           leading = false, 
-                           trailing = true, 
-                           chars = {'0'})
-  let strippedLength = decimal.coefficient.len()
-  decimal.exponent = decimal.exponent + (coefficientLength - strippedLength)
+proc reduce(a: var Decimal) =
+  var index = a.coefficient.len() - 1
+  while index > 0:
+    if a.coefficient[index] == '0':
+      index -= 1
+      a.exponent += 1
+    else:
+      break
+  a.coefficient = a.coefficient[0..index]
 
 proc parseSign(numericalString: var string): int =
   if numericalString[0] == '-':
@@ -272,42 +271,26 @@ proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
   result.coefficient = $(initBigInt(a.coefficient) * initBigInt(b.coefficient))
+  result.round(context.rounding, context.precision)
+  result.reduce()
 
 proc `*`*(a: Decimal, b: int): Decimal =
-  result = initDecimal(b)
-  result.exponent = a.exponent + result.exponent
-  result.sign = a.sign xor result.sign
-  result.coefficient = $(initBigInt(a.coefficient) * initBigInt(result.coefficient))
+  result = a * initDecimal(b)
 
 proc `*`*(a: int, b: Decimal): Decimal =
-  result = initDecimal(a)
-  result.exponent = b.exponent + result.exponent
-  result.sign = b.sign xor result.sign
-  result.coefficient = $(initBigInt(b.coefficient) * initBigInt(result.coefficient))
+  result = initDecimal(a) * b
 
 proc `*`*(a: Decimal, b: float): Decimal =
-  result = initDecimal($b)
-  result.exponent = a.exponent + result.exponent
-  result.sign = a.sign xor result.sign
-  result.coefficient = $(initBigInt(a.coefficient) * initBigInt(result.coefficient))
+  result = a * initDecimal(b)
 
 proc `*`*(a: float, b: Decimal): Decimal =
-  result = initDecimal($a)
-  result.exponent = b.exponent + result.exponent
-  result.sign = b.sign xor result.sign
-  result.coefficient = $(initBigInt(b.coefficient) * initBigInt(result.coefficient))
+  result = initDecimal(a) * b
 
 proc `*`*(a: Decimal, b: BigInt): Decimal =
-  result = initDecimal(b)
-  result.exponent = a.exponent + result.exponent
-  result.sign = a.sign xor result.sign
-  result.coefficient = $(initBigInt(a.coefficient) * initBigInt(result.coefficient))
+  result = a * initDecimal(b)
 
 proc `*`*(a: BigInt, b: Decimal): Decimal =
-  result = initDecimal(a)
-  result.exponent = b.exponent + result.exponent
-  result.sign = b.sign xor result.sign
-  result.coefficient = $(initBigInt(b.coefficient) * initBigInt(result.coefficient))
+  result = initDecimal(a) * b
 
 proc `^`(base, exp: int): int =
   # Only use positive integers
@@ -340,7 +323,8 @@ proc `/`*(a, b: Decimal): Decimal =
   result.sign = sign
   result.coefficient = $quotient
   result.exponent = exp
-  result.reduce
+  result.round(context.rounding, context.precision)
+  result.reduce()
 
 proc `/`*(a: Decimal, b: int): Decimal =
   result = initDecimal(b)
@@ -428,6 +412,8 @@ proc `+`*(a, b: Decimal): Decimal =
       else:
         result.sign = 0
         result.coefficient = $bigZero
+  result.round(context.rounding, context.precision)
+  result.reduce()
 
 proc `+`*(a: Decimal, b: int): Decimal =
   result = initDecimal(b)
@@ -460,6 +446,8 @@ proc `-`*(a,b: Decimal): Decimal =
   else:
     result.sign = 1
   result = a + result
+  result.round(context.rounding, context.precision)
+  result.reduce()
 
 proc `-`*(a: Decimal, b: int): Decimal =
   result = initDecimal(b)
