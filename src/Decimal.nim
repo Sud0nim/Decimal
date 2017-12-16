@@ -23,7 +23,7 @@ const
   bigZero = initBigInt(0)
   bigOne = initBigInt(1)
   bigTen = initBigInt(10)
-  context = Context(precision: 28, rounding: RoundHalfUp)
+  context = Context(precision: 28, rounding: RoundHalfEven)
 
 proc allZeros(coefficient: string, precision: int): bool =
   for number in coefficient[precision..coefficient.high]:
