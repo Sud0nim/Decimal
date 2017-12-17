@@ -39,6 +39,77 @@ assert($(initDecimal("-00000001E-10")) == "-1E-10")
 assert($(initDecimal("+00000001E10")) == "1E+10")
 assert($(initDecimal("-00000001E10")) == "-1E+10")
 
+# Initialisation and formatting - tests for correct coefficient, sign, exponent, isSpecial, `==` operator
+
+# String initialisation
+
+assert(initDecimal("9999999999999") == Decimal(sign: 0, coefficient: "9999999999999", exponent: 0, isSpecial: false))
+assert(initDecimal("9999999999999") == Decimal(sign: 0, coefficient: "9999999999999", exponent: 0, isSpecial: false))
+assert(initDecimal("-9999999") == Decimal(sign: 1, coefficient: "9999999", exponent: 0, isSpecial: false))
+assert(initDecimal("9999999999999.99") == Decimal(sign: 0, coefficient: "999999999999999", exponent: -2, isSpecial: false))
+assert(initDecimal("-9999999.113") == Decimal(sign: 1, coefficient: "9999999113", exponent: -3, isSpecial: false))
+assert(initDecimal("9999999999999") == Decimal(sign: 0, coefficient: "9999999999999", exponent: 0, isSpecial: false))
+assert(initDecimal("102399999999999999999999993833333333333337777777777777777727729999999999999.199999999999999999999999999999282671") == Decimal(sign: 0, coefficient: "102399999999999999999999993833333333333337777777777777777727729999999999999199999999999999999999999999999282671", exponent: 0, isSpecial: false))
+
+# Int initialisation
+
+assert(initDecimal(123456) == Decimal(sign: 0, coefficient: "123456", exponent: 0, isSpecial: false))
+assert(initDecimal(-9999999) == Decimal(sign: 1, coefficient: "9999999", exponent: 0, isSpecial: false))
+assert(initDecimal(984323112) == Decimal(sign: 0, coefficient: "984323112", exponent: 0, isSpecial: false))
+assert(initDecimal(-99999900) == Decimal(sign: 1, coefficient: "99999900", exponent: 0, isSpecial: false))
+assert(initDecimal(987654323) != Decimal(sign: 0, coefficient: "99998999999", exponent: 0, isSpecial: false))
+
+# Float initialisation
+
+assert(initDecimal("0.123844") == initDecimal(0.123844))
+assert(initDecimal("-9999999") == initDecimal(-9999999))
+assert(initDecimal("9999999999999.99") == initDecimal(9999999999999.99))
+assert(initDecimal("-9999999.113") == initDecimal(-9999999.113))
+assert(initDecimal("99999999999.99001") == initDecimal(99999999999.99))
+
+# Bigint initialisation
+
+assert(initDecimal("2839278492047202928") == initDecimal(initBigInt(2839278492047202928)))
+assert(initDecimal("-2839278492047202928") == initDecimal(initBigInt(-2839278492047202928)))
+assert(initDecimal("100000000000000000000000000000288782827884782424999999999999999") == initDecimal(initBigInt("100000000000000000000000000000288782827884782424999999999999999")))
+assert(initDecimal("0") == initDecimal(initBigInt(-0)))
+assert(initDecimal("1") == initDecimal(initBigInt(1)))
+
+# Decimal initialisation
+
+assert(initDecimal("0.123844") == initDecimal(initDecimal("0.123844")))
+assert(initDecimal("-9999999") == initDecimal(initDecimal("-9999999")))
+assert(initDecimal("9999999999999.99") == initDecimal(initDecimal("9999999999999.99")))
+assert(initDecimal("-9999999.113") == initDecimal(initDecimal("-9999999.113")))
+assert(initDecimal("9999999999999") == initDecimal(initDecimal("9999999999999")))
+
+# NaN's
+
+assert(initDecimal("abcdefgh") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("99999d99a") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("9999.999999999.99") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("--9999999.113") == Decimal(sign: 1, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("++9999999999999") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("102399999999999999999999993833333E33333337777777777777777727729999999999999e199999999999999999999999999999282671") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal(" ") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("-") == Decimal(sign: 1, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("+") == Decimal(sign: 0, coefficient: "qNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("+sNan") == Decimal(sign: 0, coefficient: "sNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("-snan") == Decimal(sign: 1, coefficient: "sNaN", exponent: 0, isSpecial: true))
+assert(initDecimal("SNAN") == Decimal(sign: 0, coefficient: "sNaN", exponent: 0, isSpecial: true))
+
+# Infinite
+
+assert(initDecimal("inf") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("-inf") == Decimal(sign: 1, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("+inf") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("+inF") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("INfinITY") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("infinity") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("-infinity") == Decimal(sign: 1, coefficient: "infinity", exponent: 0, isSpecial: true))
+assert(initDecimal("+infinity") == Decimal(sign: 0, coefficient: "infinity", exponent: 0, isSpecial: true))
+
 # Combined arithmetic all inputs positive numbers - tests for: arithmetic, string formatting
 
 assert($(initDecimal("0.0000000000000000000001928374272") * initDecimal("92222222222222222") * initDecimal("2")) == "0.0000355677921279999999142944768")
