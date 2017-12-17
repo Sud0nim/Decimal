@@ -46,11 +46,15 @@ proc exactHalf(numericalString: string, precision: int): bool =
   result = true
 
 proc isDecimalString(numericalString: string): bool =
+  if numericalString.len == 0:
+    return false
   var 
     dotCount = 0
-    cleanedString = numericalString.replace(",","").replace("_","")
+    cleanedString = numericalString
   if cleanedString[0] in {'+','-'}:
     cleanedString = cleanedString[1..cleanedString.high]
+  if cleanedString.len == 0:
+    return false
   for character in cleanedString:
     if character notin {'.','1','2','3','4','5','6','7','8','9','0'}:
       return false
@@ -176,7 +180,7 @@ proc parseDecimalString(numericalString: var string): int =
     if numericalString != "0":
       result = numberParts[1].len * -1
   else:
-    raise newException(IOError, "Invalid numerical string format.")
+    raise newException(IOError, "Invalid decimal string format.")
 
 proc parseScientificString(numericalString: var string): int =
   let numberParts = numericalString.toLower.split('e')
@@ -190,7 +194,7 @@ proc parseScientificString(numericalString: var string): int =
 proc parseSpecialString(numericalString: var string): int =
   numericalString = numericalString.tolower
   if numericalString in ["inf", "infinity"]:
-    numericalString = "inf"
+    numericalString = "infinity"
   elif numericalString == "snan":
     numericalString = "sNaN"
   else:
@@ -198,8 +202,6 @@ proc parseSpecialString(numericalString: var string): int =
   result = 0
 
 proc toNumber(numericalString: string): Decimal =
-  if numericalString.len == 0:
-    raise newException(IOError, "Invalid string format (empty string).")
   result.coefficient = numericalString
   result.sign = parseSign(result.coefficient)
   result.isSpecial = false
@@ -463,6 +465,12 @@ proc `==`*(a, b: Decimal): bool =
       false
     elif a.coefficient == "0" and b.coefficient == "0":
       true
+    elif a.coefficient == "infinity" and b.coefficient == "infinity":
+      true
+    elif a.coefficient == "qNaN" and b.coefficient == "qNaN":
+      true
+    elif a.coefficient == "sNaN" and b.coefficient == "sNaN":
+      true
     elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) == 
          initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
       true
@@ -697,3 +705,4 @@ proc isLogical*(a: Decimal): bool =
     if character notin {'0','1'}:
       return false
   result = true
+  
