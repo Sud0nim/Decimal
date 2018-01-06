@@ -1,6 +1,4 @@
-import strutils except toLower
-import math, bigints
-from unicode import toLower
+import math, bigints, strutils
 
 type
   Rounding* = enum
@@ -65,7 +63,7 @@ proc isDecimalString(numericalString: string): bool =
   result = true
 
 proc isScientificString(numericalString: string): bool = 
-  var stringParts = numericalString.toLower.split('e')
+  var stringParts = numericalString.toLowerAscii.split('e')
   if stringParts.len != 2:
     return false
   if not stringParts[0].isDecimalString:
@@ -183,7 +181,7 @@ proc parseDecimalString(numericalString: var string): int =
     raise newException(IOError, "Invalid decimal string format.")
 
 proc parseScientificString(numericalString: var string): int =
-  let numberParts = numericalString.toLower.split('e')
+  let numberParts = numericalString.toLowerAscii.split('e')
   if numberParts.len == 2:
     numericalString = numberParts[0]
     result = parseDecimalString(numericalString)
@@ -192,7 +190,7 @@ proc parseScientificString(numericalString: var string): int =
     raise newException(IOError, "Invalid scientific string format.")
 
 proc parseSpecialString(numericalString: var string): int =
-  numericalString = numericalString.tolower
+  numericalString = numericalString.toLowerAscii
   if numericalString in ["inf", "infinity"]:
     numericalString = "infinity"
   elif numericalString == "snan":
