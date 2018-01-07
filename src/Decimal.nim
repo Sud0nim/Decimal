@@ -15,17 +15,31 @@ type
   Context* = object
     precision*: int
     rounding*: Rounding
-    flags*, traps*: seq[Signal]
+    flags*, traps*: Table[Signal, int]
+
 const 
   bigZero = initBigInt(0)
   bigTen = initBigInt(10)
-  defaultContext = Context(precision: 28, rounding: RoundHalfEven)
+  defaultFlags = {Clamped: 0, DivisionByZero: 0, Inexact: 0, 
+                  Overflow: 0, Rounded: 0, Underflow: 0, 
+                  InvalidOperation: 0, Subnormal: 0, 
+                  FloatOperation: 0}.toTable
+  defaultTraps = {Clamped: 1, DivisionByZero: 1, Inexact: 0, 
+                  Overflow: 1, Rounded: 0, Underflow: 1, 
+                  InvalidOperation: 1, Subnormal: 0, 
+                  FloatOperation: 1}.toTable
+  defaultContext = Context(precision: 28, rounding: RoundHalfEven,
+                           flags: defaultFlags, traps: defaultTraps)
 
 proc setContext*(context: var Context,
                  precision: int = 28, 
-                 rounding: Rounding = RoundHalfEven) =
+                 rounding: Rounding = RoundHalfEven,
+                 flags: Table[Signal, int] = defaultFlags,
+                 traps: Table[Signal, int] = defaultTraps) =
   context.precision = precision
   context.rounding = rounding
+  context.flags = flags
+  context.traps = traps
 
 var context = defaultContext
 
@@ -223,54 +237,50 @@ proc initDecimal*(number: BigInt): Decimal =
 proc initDecimal*(number: Decimal): Decimal =
   result = number
 
-proc toScientificString*(a: Decimal): string =
-  var
-    adjustedExponent = a.exponent + (a.coefficient.len - 1)
-  if a.exponent <= 0 and adjustedExponent >= -6:
-    if a.exponent == 0:
-      result = a.coefficient
-    else:
-      if adjustedExponent < 0:
-        result = "0." & repeat('0', abs(a.exponent) - a.coefficient.len) & 
-                 a.coefficient
-      elif adjustedExponent >= 0:
-        result = a.coefficient[0..adjustedExponent] & "." & 
-                 a.coefficient[adjustedExponent + 1..a.coefficient.high]
-  else:
-    let exponentSign = if adjustedExponent > 0: "+" else: ""
-    if a.coefficient.len > 1:
-      result = a.coefficient[0] & "." & a.coefficient[1..a.coefficient.high] & 
-               "E" & exponentSign & $adjustedExponent
-    else:
-      result = a.coefficient & "E" & exponentSign & $adjustedExponent
-  result = ["", "-"][a.sign] & result
+proc pyModulus(a, b: int): int =
+  ## This is needed because the behaviour of CPython's
+  ## ## `%` operator (modulus) is different to Nim's/
+  ((a mod b) + b) mod b
 
-proc toEngineeringString*(a: Decimal): string =
+proc toString(a: Decimal, eng: bool=false): string =
+  let sign = ["", "-"][a.sign]
+  if a.isSpecial == true:
+    return $a.sign & a.coefficient
+  let leftdigits = a.exponent + len(a.coefficient)
   var
-    adjustedExponent = a.exponent + (a.coefficient.len - 1)
-  if a.exponent <= 0 and adjustedExponent >= -6:
-    if a.exponent == 0:
-      result = a.coefficient
-    else:
-      if adjustedExponent < 0:
-        result = "0." & repeat('0', abs(a.exponent) - a.coefficient.len) &
-                 a.coefficient
-      elif adjustedExponent >= 0:
-        result = a.coefficient[0..adjustedExponent] & "." & 
-                 a.coefficient[adjustedExponent + 1..a.coefficient.high]
+    dotplace: int
+    intpart, fracpart, exp: string
+  if a.exponent <= 0 and leftdigits > -6:
+     dotplace = leftdigits
+  elif not eng:
+     dotplace = 1
+  elif a.coefficient == "0":
+     dotplace = (leftdigits + 1).pyModulus(3) - 1
   else:
-    var
-      modulus = 3 - abs(adjustedExponent mod 3)
-      adjustedExponent = if modulus == 3: adjustedExponent 
-                         else: adjustedExponent - modulus
-      decimalPosition = 1 + abs(modulus)
-    if a.coefficient.len >= decimalPosition:
-      var rightPart = a.coefficient[decimalPosition..a.coefficient.high]
-      result = a.coefficient[0..<decimalPosition] & "." & rightPart & 
-               "E" & $adjustedExponent
-    else:
-      result = a.coefficient & "E" & $adjustedExponent
-  result = ["", "-"][a.sign] & result
+     dotplace = (leftdigits - 1).pyModulus(3) + 1
+  if dotplace <= 0:
+     intpart = "0"
+     fracpart = "." & repeat('0', -dotplace) & a.coefficient
+  elif dotplace >= a.coefficient.len:
+     intpart = a.coefficient & repeat('0', dotplace - a.coefficient.len)
+     fracpart = ""
+  else:
+     intpart = a.coefficient[0..<dotplace]
+     fracpart = "." & a.coefficient[dotplace..a.coefficient.high]
+  if leftdigits == dotplace:
+     exp = ""
+  else:
+     let
+       exponentValue = (leftdigits-dotplace)
+       exponentSign = if exponentValue > 0: "+" else: ""
+     exp = "E" & exponentSign & $exponentValue
+  result = sign & intpart & fracpart & exp
+
+proc toScientificString(a: Decimal): string =
+  result = a.toString()
+
+proc toEngineeringString(a: Decimal): string =
+  result = a.toString(eng=true)
 
 proc `$`*(number: Decimal): string =
   result = number.toScientificString
