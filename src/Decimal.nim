@@ -239,8 +239,8 @@ proc initDecimal*(number: Decimal): Decimal =
 
 proc pyModulus(a, b: int): int =
   ## This is needed because the behaviour of CPython's
-  ## ## `%` operator (modulus) is different to Nim's/
-  ((a mod b) + b) mod b
+  ## `%` operator (modulus) is different to Nim's
+  result = ((a mod b) + b) mod b
 
 proc toString(a: Decimal, eng: bool=false): string =
   let sign = ["", "-"][a.sign]
