@@ -448,6 +448,18 @@ proc `-`*(a: Decimal, b: BigInt): Decimal =
 
 proc `-`*(a: BigInt, b: Decimal): Decimal =
   result = initDecimal(a) - b
+  
+proc `+=`*(a: var Decimal, b: Decimal) =
+  a = a + b
+
+proc `-=`*(a: var Decimal, b: Decimal) =
+  a = a - b
+
+proc `*=`*(a: var Decimal, b: Decimal) =
+  a = a * b
+
+proc `/=`*(a: var Decimal, b: Decimal) =
+  a = a / b
 
 proc `^`*(a: Decimal, b: int): Decimal =
   result = a
