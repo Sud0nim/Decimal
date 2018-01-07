@@ -12,7 +12,7 @@ Note: for anyone wondering why this project is going through a large number of c
 - [x] Basic arithmetic (plus, minus, divide, multiply)
 - [x] Number to Decimal String
 - [x] Number to Scientific String
-- [ ] Number to Engineering String
+- [X] Number to Engineering String
 - [x] Boolean operators
 - [ ] Create the remainder of required procedures shown in http://speleotrove.com/decimal/daops.html
 - [x] Add all major rounding rules
