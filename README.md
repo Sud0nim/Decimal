@@ -7,8 +7,8 @@ Note: for anyone wondering why this project is going through a large number of c
 
 # Progress:
 
-- [x] Settle on object design and enums
-- [x] MVP object initialisation procs for various inputs (string, int, bigint, float)
+- [ ] Settle on object design and enums
+- [x] Initialisation procs for various inputs (string, int, bigint, float)
 - [x] Basic arithmetic (plus, minus, divide, multiply)
 - [x] Number to Decimal String
 - [x] Number to Scientific String
