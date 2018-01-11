@@ -1,4 +1,4 @@
-import math, bigints, strutils
+import math, bigints, strutils, tables
 
 type
   Rounding* = enum
@@ -10,15 +10,17 @@ type
     Underflow, InvalidOperation, Subnormal, FloatOperation
   Decimal* = object
     sign*, exponent*: int
-    coefficient*: string
+    coefficient*: BigInt
     isSpecial*: bool
   Context* = object
     precision*: int
     rounding*: Rounding
     flags*, traps*: Table[Signal, int]
+  # inf = 0 / snan = 1 / qnan = 2
 
 const 
   bigZero = initBigInt(0)
+  bigOne = initBigInt(1)
   bigTen = initBigInt(10)
   defaultFlags = {Clamped: 0, DivisionByZero: 0, Inexact: 0, 
                   Overflow: 0, Rounded: 0, Underflow: 0, 
@@ -90,7 +92,7 @@ proc isScientificString(numericalString: string): bool =
   result = true
 
 proc roundDown(a: Decimal, precision: int): int =
-  if allZeros(a.coefficient, precision):
+  if allZeros($a.coefficient, precision):
       result = 0
   else:
       result = -1
@@ -99,41 +101,41 @@ proc roundUp(a: Decimal, precision: int): int =
   result = -roundDown(a, precision)
 
 proc roundHalfUp(a: Decimal, precision: int): int =
-  if a.coefficient[precision] in {'5','6','7','8','9'}:
+  if ($a.coefficient)[precision] in {'5','6','7','8','9'}:
       result = 1
-  elif allZeros(a.coefficient, precision):
+  elif allZeros($a.coefficient, precision):
       result = 0
   else:
       result = -1
 
 proc roundHalfDown(a: Decimal, precision: int): int =
-  if exactHalf(a.coefficient, precision):
+  if exactHalf($a.coefficient, precision):
     result = -1
   else:
     result = roundHalfUp(a, precision)
 
 proc roundHalfEven(a: Decimal, precision: int): int =
-  if exactHalf(a.coefficient, precision) and 
+  if exactHalf($a.coefficient, precision) and 
        (precision == 0 or 
-       a.coefficient[precision - 1] in {'0','2','4','6','8'}):
+       ($a.coefficient)[precision - 1] in {'0','2','4','6','8'}):
     result = -1
   else:
     result = roundHalfUp(a, precision)
 
 proc roundCeiling(a: Decimal, precision: int): int =
-  if a.sign == 1 or allZeros(a.coefficient, precision):
+  if a.sign == 1 or allZeros($a.coefficient, precision):
     result = 0
   else:
     result = 1
 
 proc roundFloor(a: Decimal, precision: int): int =
-  if a.sign == 0 or allZeros(a.coefficient, precision):
+  if a.sign == 0 or allZeros($a.coefficient, precision):
     result = 0
   else:
     result = 1
 
 proc round05Up(a: Decimal, precision: int): int =
-  if a.coefficient[precision - 1] notin {'0','5'} and
+  if ($a.coefficient)[precision - 1] notin {'0','5'} and
     $precision notin ["0","5"]:
       result = roundDown(a, precision)
   else:
@@ -143,25 +145,25 @@ const roundingProcs = [roundDown, roundHalfUp, roundHalfEven, roundCeiling,
                        roundFloor, roundHalfDown, roundUp, round05Up]
 
 proc round(a: var Decimal, roundingType: Rounding, precision: int) =
-  let coefficientLength = a.coefficient.len
+  let coefficientLength = ($a.coefficient).len
   if not (coefficientLength <= precision):
     let rounding = roundingProcs[ord(roundingType)](a, precision)
-    a.coefficient = a.coefficient[0..<precision]
+    a.coefficient = initBigInt(($a.coefficient)[0..<precision])
     if rounding > 0:
-      a.coefficient = $(initBigInt(a.coefficient) + 1)
-    if a.coefficient.len > precision:
-      a.coefficient = a.coefficient[0..<precision]
+      a.coefficient = a.coefficient + bigOne
+    if len($a.coefficient) > precision:
+      a.coefficient = initBigInt(($a.coefficient)[0..<precision])
     a.exponent += coefficientLength - precision
-
+    
 proc reduce(a: var Decimal) =
-  var index = a.coefficient.high
+  var index = ($a.coefficient).high
   while index > context.precision:
-    if a.coefficient[index] == '0':
+    if ($a.coefficient)[index] == '0':
       index -= 1
       a.exponent += 1
     else:
       break
-  a.coefficient = a.coefficient[0..index]
+  a.coefficient = initBigInt(($a.coefficient)[0..index])
 
 proc parseSign(numericalString: var string): int =
   if numericalString[0] == '-':
@@ -203,27 +205,26 @@ proc parseScientificString(numericalString: var string): int =
   else:
     raise newException(IOError, "Invalid scientific string format.")
 
-proc parseSpecialString(numericalString: var string): int =
-  numericalString = numericalString.toLowerAscii
-  if numericalString in ["inf", "infinity"]:
-    numericalString = "infinity"
-  elif numericalString == "snan":
-    numericalString = "sNaN"
+proc parseSpecialString(numericalString: string): int =
+  if numericalString.toLowerAscii in ["inf", "infinity"]:
+    result = 0
+  elif numericalString.toLowerAscii == "snan":
+    result = 1
   else:
-    numericalString = "qNaN"
-  result = 0
+    result = 2
 
 proc toNumber(numericalString: string): Decimal =
-  result.coefficient = numericalString
-  result.sign = parseSign(result.coefficient)
+  var coefficient = numericalString
+  result.sign = parseSign(coefficient)
   result.isSpecial = false
   if numericalString.isDecimalString:
-    result.exponent = parseDecimalString(result.coefficient)
+    result.exponent = parseDecimalString(coefficient)
   elif numericalString.isScientificString:
-    result.exponent = parseScientificString(result.coefficient)
+    result.exponent = parseScientificString(coefficient)
   else:
-    result.exponent = parseSpecialString(result.coefficient)
+    result.exponent = parseSpecialString(coefficient)
     result.isSpecial = true
+  result.coefficient = initBigInt(coefficient)
   
 proc initDecimal*(numericalString: string): Decimal =
   result = toNumber(numericalString)
@@ -237,16 +238,22 @@ proc initDecimal*(number: BigInt): Decimal =
 proc initDecimal*(number: Decimal): Decimal =
   result = number
 
+const
+  decZero = initDecimal(0)
+  decOne = initDecimal(1)
+
 proc pyModulus(a, b: int): int =
   ## This is needed because the behaviour of CPython's
   ## `%` operator (modulus) is different to Nim's
-  result = ((a mod b) + b) mod b
+  ((a mod b) + b) mod b
 
-proc toString(a: Decimal, eng: bool=false): string =
+proc toString(b: Decimal, eng: bool=false): string =
+  var a = b
+  a.reduce
   let sign = ["", "-"][a.sign]
   if a.isSpecial == true:
-    return $a.sign & a.coefficient
-  let leftdigits = a.exponent + len(a.coefficient)
+    return $a.sign & $a.coefficient
+  let leftdigits = a.exponent + len($a.coefficient)
   var
     dotplace: int
     intpart, fracpart, exp: string
@@ -254,19 +261,19 @@ proc toString(a: Decimal, eng: bool=false): string =
      dotplace = leftdigits
   elif not eng:
      dotplace = 1
-  elif a.coefficient == "0":
+  elif a.coefficient == bigZero:
      dotplace = (leftdigits + 1).pyModulus(3) - 1
   else:
      dotplace = (leftdigits - 1).pyModulus(3) + 1
   if dotplace <= 0:
      intpart = "0"
-     fracpart = "." & repeat('0', -dotplace) & a.coefficient
-  elif dotplace >= a.coefficient.len:
-     intpart = a.coefficient & repeat('0', dotplace - a.coefficient.len)
+     fracpart = "." & repeat('0', -dotplace) & $a.coefficient
+  elif dotplace >= len($a.coefficient):
+     intpart = $a.coefficient & repeat('0', dotplace - len($a.coefficient))
      fracpart = ""
   else:
-     intpart = a.coefficient[0..<dotplace]
-     fracpart = "." & a.coefficient[dotplace..a.coefficient.high]
+     intpart = ($a.coefficient)[0..<dotplace]
+     fracpart = "." & ($a.coefficient)[dotplace..($a.coefficient).high]
   if leftdigits == dotplace:
      exp = ""
   else:
@@ -297,14 +304,14 @@ proc normalise(a, b: Decimal, precision: int): tuple[a, b: Decimal] =
     dec1 = a
     dec2 = b
   var 
-    dec1Length = dec1.coefficient.len
-    dec2Length = dec2.coefficient.len
+    dec1Length = ($dec1.coefficient).len
+    dec2Length = ($dec2.coefficient).len
     exponent = dec1.exponent + min(-1, dec1Length - precision - 2)
   if dec2Length + dec2.exponent - 1 < exponent:
-    dec2.coefficient = "1"
+    dec2.coefficient = bigOne
     dec2.exponent = exponent
-  dec1.coefficient = $(initBigInt(dec1.coefficient) * pow(bigTen, 
-                       initBigInt(dec1.exponent - dec2.exponent)))
+  dec1.coefficient = initBigInt(dec1.coefficient) * pow(bigTen, 
+                       initBigInt(dec1.exponent - dec2.exponent))
   dec1.exponent = dec2.exponent
   if a.exponent < b.exponent:
     result = (dec2, dec1)
@@ -314,9 +321,8 @@ proc normalise(a, b: Decimal, precision: int): tuple[a, b: Decimal] =
 proc `*`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
-  result.coefficient = $(initBigInt(a.coefficient)*initBigInt(b.coefficient))
+  result.coefficient = initBigInt(a.coefficient)*initBigInt(b.coefficient)
   result.round(context.rounding, context.precision)
-  result.reduce
 
 proc `*`*(a: Decimal, b: int): Decimal =
   result = a * initDecimal(b)
@@ -339,7 +345,7 @@ proc `*`*(a: BigInt, b: Decimal): Decimal =
 proc `/`*(a, b: Decimal): Decimal =
   var
     quotient, remainder: BigInt
-    shift = b.coefficient.len - a.coefficient.len + context.precision + 1
+    shift = ($b.coefficient).len - ($a.coefficient).len + context.precision + 1
   if shift >= 0:
     (quotient, remainder) = divmod(initBigInt(a.coefficient) * 
                                    pow(initBigInt(10), 
@@ -353,10 +359,9 @@ proc `/`*(a, b: Decimal): Decimal =
     if quotient mod 5 == bigZero:
       quotient += 1
   result.sign = a.sign xor b.sign 
-  result.coefficient = $quotient
+  result.coefficient = quotient
   result.exponent = a.exponent - b.exponent - shift
   result.round(context.rounding, context.precision)
-  result.reduce
 
 proc `/`*(a: Decimal, b: int): Decimal =
   result = a / initDecimal(b)
@@ -394,14 +399,13 @@ proc `+`*(a, b: Decimal): Decimal =
   else:
     result.sign = 0
   if bNormalised.sign == 0:
-    result.coefficient = $(initBigInt(aNormalised.coefficient) + 
-                           initBigInt(bNormalised.coefficient))
+    result.coefficient = initBigInt(aNormalised.coefficient) + 
+                           initBigInt(bNormalised.coefficient)
   else:
-    result.coefficient = $(initBigInt(aNormalised.coefficient) - 
-                           initBigInt(bNormalised.coefficient))
+    result.coefficient = initBigInt(aNormalised.coefficient) - 
+                           initBigInt(bNormalised.coefficient)
   result.exponent = aNormalised.exponent
   result.round(context.rounding, context.precision)
-  result.reduce
 
 proc `+`*(a: Decimal, b: int): Decimal =
   result = a + initDecimal(b)
@@ -429,7 +433,6 @@ proc `-`*(a, b: Decimal): Decimal =
     result.sign = 1
   result = a + result
   result.round(context.rounding, context.precision)
-  result.reduce
 
 proc `-`*(a: Decimal, b: int): Decimal =
   result = a - initDecimal(b)
@@ -448,7 +451,7 @@ proc `-`*(a: Decimal, b: BigInt): Decimal =
 
 proc `-`*(a: BigInt, b: Decimal): Decimal =
   result = initDecimal(a) - b
-  
+
 proc `+=`*(a: var Decimal, b: Decimal) =
   a = a + b
 
@@ -478,19 +481,18 @@ proc pow*(a: Decimal, b: int): Decimal =
     result = initDecimal("1") / result
   elif b == 0:
     result = initDecimal("1")
-
+ 
 proc `==`*(a, b: Decimal): bool =
   result = 
     if a.sign != b.sign:
       false
-    elif a.coefficient == "0" and b.coefficient == "0":
+    elif a.coefficient == bigZero and b.coefficient == bigZero:
       true
-    elif a.coefficient == "infinity" and b.coefficient == "infinity":
-      true
-    elif a.coefficient == "qNaN" and b.coefficient == "qNaN":
-      true
-    elif a.coefficient == "sNaN" and b.coefficient == "sNaN":
-      true
+    elif a.isSpecial and b.isSpecial:
+      if a.exponent == b.exponent:
+        true
+      else:
+        false
     elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) == 
          initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
       true
@@ -505,7 +507,7 @@ proc `!=`*(a, b: Decimal): bool =
 
 proc `>`*(a, b: Decimal): bool =
   result = 
-    if a.coefficient == "0" and b.coefficient == "0":
+    if a.coefficient == bigZero and b.coefficient == bigZero:
       false
     elif a.sign > b.sign:
       false
@@ -551,7 +553,7 @@ proc `>`*(a: BigInt, b: Decimal): bool =
 
 proc `>=`*(a, b: Decimal): bool =
   result = 
-    if a.coefficient == "0" and b.coefficient == "0":
+    if a.coefficient == bigZero and b.coefficient == bigZero:
       true
     elif a.sign > b.sign:
       false
@@ -596,7 +598,7 @@ proc `>=`*(a: BigInt, b: Decimal): bool =
 
 proc `<`*(a, b: Decimal): bool =
   result = 
-    if a.coefficient == "0" and b.coefficient == "0":
+    if a.coefficient == bigZero and b.coefficient == bigZero:
       false
     elif a.sign < b.sign:
       false
@@ -678,19 +680,19 @@ proc `<=`*(a: string, b: Decimal): bool =
 
 proc `<=`*(a: BigInt, b: Decimal): bool =
   result = initDecimal(a) <= b
-  
+ 
 proc abs*(a: Decimal): Decimal =
   result = a
   result.sign = 0
 
-proc compare*(a, b: Decimal): int =
+proc compare*(a, b: Decimal): Decimal =
   result = 
     if a < b: 
-      -1
+      initDecimal(-1)
     elif a > b:
-      1
+      initDecimal(1)
     else:
-      0
+      initDecimal(0)
 
 proc divideInteger*(a, b: Decimal): BigInt =
   result = (initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent))) div 
@@ -721,7 +723,7 @@ proc maxMagnitude*(a, b: Decimal): Decimal =
 proc isLogical*(a: Decimal): bool =
   if a.sign != 0 or a.exponent != 0:
     return false
-  for character in a.coefficient:
+  for character in $a.coefficient:
     if character notin {'0','1'}:
       return false
   result = true
