@@ -2,6 +2,27 @@ import decimal, bigints
 
 # Initialisation tests with zero values - tests for: string parsing, string formatting
 
+assert($initDecimal("123") == "123")
+assert($initDecimal("-123") == "-123")
+#cho initDecimal("1.23E+3")
+assert($initDecimal("1.23E+3") == "1.23E+3")
+assert($initDecimal("1.23E+5") == "1.23E+5")
+assert($initDecimal("12.3") == "12.3")
+assert($initDecimal("0.00123") == "0.00123")
+assert($initDecimal("1.23E-8") == "1.23E-8")
+assert($initDecimal("-1.23E-10") == "-1.23E-10")
+assert($initDecimal("0") == "0")
+assert($initDecimal("0.00") == "0.00")
+#assert($initDecimal("0E+2") == "0E+2")
+assert($initDecimal("-0") == "-0")
+assert($initDecimal("0.000005") == "0.000005")
+assert($initDecimal("0.0000050") == "0.0000050")
+assert($initDecimal("5E-7") == "5E-7")
+#assert($initDecimal("Infinity") == "Infinity")
+#assert($initDecimal("-Infinity") == "-Infinity")
+#assert($initDecimal("NaN") == "NaN")
+#assert($initDecimal("NaN123") == "NaN")
+#assert($initDecimal("-sNaN") == "sNaN")
 assert($(initDecimal("0")) == "0")
 assert($(initDecimal("-0")) == "-0")
 assert($(initDecimal("+0")) ==  "0")
@@ -51,7 +72,40 @@ assert(initDecimal("-9999999.113") == Decimal(sign: 1, coefficient: "9999999113"
 assert(initDecimal("9999999999999") == Decimal(sign: 0, coefficient: "9999999999999", exponent: 0, isSpecial: false))
 assert(initDecimal("102399999999999999999999993833333333333337777777777777777727729999999999999.199999999999999999999999999999282671") == Decimal(sign: 0, coefficient: "102399999999999999999999993833333333333337777777777777777727729999999999999199999999999999999999999999999282671", exponent: -36, isSpecial: false))
 
-# Int initialisation
+# allZeros
+
+assert("0000000000".allZeros(0) == true)
+assert("0".allZeros(0) == true)
+assert("0000000000000000000000000000000000".allZeros(0) == true)
+assert("00".allZeros(0) == true)
+assert("0000000000O".allZeros(0) == false)
+assert("0h".allZeros(0) == false)
+assert("00000000010000000000000000000000000".allZeros(0) == false)
+assert("001".allZeros(0) == false)
+
+# exactHalf
+
+assert("5000000000".exactHalf(0) == true)
+assert("50".exactHalf(0) == true)
+assert("0000000523324500000000000".exactHalf(13) == true)
+assert("005".exactHalf(2) == true)
+assert("00000000004".exactHalf(3) == false)
+assert("40".exactHalf(0) == false)
+assert("00000032523300000000000000000000".exactHalf(11) == false)
+assert("001".exactHalf(2) == false)
+
+# stripLeadingZeros
+
+assert("000000000".stripLeadingZeros() == "0")
+assert("50".stripLeadingZeros() == "50")
+assert("0000000523324500000000000".stripLeadingZeros() == "523324500000000000")
+assert("005".stripLeadingZeros() == "5")
+assert("00000000004".stripLeadingZeros() == "4")
+assert("40".stripLeadingZeros() == "40")
+assert("00000032523300000000000000000000".stripLeadingZeros() == "32523300000000000000000000")
+assert("001".stripLeadingZeros() == "1")
+
+#[ Int initialisation
 
 assert(initDecimal(123456) == Decimal(sign: 0, coefficient: "123456", exponent: 0, isSpecial: false))
 assert(initDecimal(-9999999) == Decimal(sign: 1, coefficient: "9999999", exponent: 0, isSpecial: false))
@@ -179,7 +233,7 @@ assert(initDecimal("-0.1") + initDecimal("+0.1") + initDecimal("-0.1") + initDec
 assert(initDecimal("-0.1") * initDecimal("-0.1") * initDecimal("+0.1") * initDecimal("-0.1") * 
   initDecimal("-0.1") * initDecimal("+0.1") * initDecimal("-0.1") * initDecimal("-0.1") == initDecimal("1E-8"))
   
-#[
+
 
 TODO:
 
