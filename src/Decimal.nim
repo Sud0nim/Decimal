@@ -1,5 +1,5 @@
 import math, bigints, strutils
- 
+
 type
   Rounding* {. pure .} = enum
     Down, 
@@ -46,7 +46,6 @@ type
   OverflowError* = object of Exception
   UnderflowError* = object of Exception
   FloatOperationError* = object of Exception
-
 
 # Initialise commonly used BigInt values.
 
@@ -109,6 +108,12 @@ proc allZeros(numericalString: string, precision: int): bool =
       return false
   true
 
+proc allNines(numericalString: string, precision: int): bool =
+  for character in numericalString[precision..numericalString.high]:
+    if character != '9':
+      return false
+  true
+
 proc exactHalf(numericalString: string, precision: int): bool =
   if numericalString[precision] != '5':
     return false
@@ -118,7 +123,7 @@ proc exactHalf(numericalString: string, precision: int): bool =
   true
 
 proc stripLeadingZeros(digits: string): string =
-  ## Internal Procedure: returns a copy of the input string with any
+  ## Returns a copy of the input string with any
   ## leading zeros removed. Only iterates to the second last digit as at least
   ## one digit is required for a valid Decimal coefficient, even if it is zero.
   var zeros = 0
@@ -148,6 +153,18 @@ proc initDecimal(coefficient: BigInt): Decimal =
     result.coefficient = coefficient
   result.exponent = 0
   result.special = SpecialValue.None
+
+proc adjusted(a: Decimal): int =
+  a.exponent + len($a.coefficient) - 1
+
+proc isInfinite(a: Decimal): int =
+  if a.special == SpecialValue.Inf:
+    if a.sign == 1:
+      -1
+    else:
+      1
+  else:
+    0
 
 proc toNumber(input: string): Decimal =
   ## Takes a string as an input and attempts to parse
@@ -204,18 +221,14 @@ proc toNumber(input: string): Decimal =
       let sign = result.sign
       if input[start..input.high].toLowerAscii() in ["inf", "infinity"]:
         result = decINF
-        result.sign = sign
-        return result
       elif input[start..(3 + start)].toLowerAscii() == "nan":
         result = decQNAN
-        result.sign = sign
-        return result
       elif input[start..(4 + start)].toLowerAscii() == "snan":
         result = decSNAN
-        result.sign = sign
-        return result
       else:
         raise newException(ConversionSyntaxError, "conversionsyntax etc...")
+      result.sign = sign
+      return result
   # `initBigInt` handles leading zeros, so no need to double up.
   result.coefficient = initBigInt(digits)
 
@@ -284,23 +297,8 @@ proc round(a: var Decimal, roundingType: Rounding, precision: int) =
     a.exponent += coefficientLength - precision
     if rounding > 0:
       a.coefficient = a.coefficient + bigOne
-      if coef[precision-1] == '9':
+      if coef.allNines(0):
         a.coefficient = a.coefficient div 10
-
-proc getRoundedValue(a: Decimal, roundingType: Rounding, precision: int): Decimal =
-  # move rounding to end
-  result = a
-  var 
-    coef = $result.coefficient
-    coefficientLength = coef.len
-  if coefficientLength > precision:
-    let rounding = roundingProcs[ord(roundingType)](coef, result.sign, precision)
-    result.coefficient = initBigInt(coef[0..<precision])
-    result.exponent += coefficientLength - precision
-    if rounding > 0:
-      result.coefficient = result.coefficient + bigOne
-      if coef[precision-1] == '9':
-        result.coefficient = result.coefficient div 10
 
 proc reduce(a: var Decimal) =
   var index = ($a.coefficient).high
@@ -326,13 +324,16 @@ proc pyModulus(a, b: int): int =
   ## `%` operator (modulus) is different to Nim's
   ((a mod b) + b) mod b
 
-proc toString(b: Decimal, eng: bool=false): string =
+proc toString(b: Decimal, eng: bool = false): string =
   var a = b
   a.reduce
   let sign = ["", "-"][a.sign]
   if a.special != SpecialValue.None:
     return $a.sign & $a.special
-  let leftdigits = a.exponent + len($a.coefficient)
+  let 
+    aCoefficientStr = $a.coefficient
+    aCoefficientLen = aCoefficientStr.len
+    leftdigits = a.exponent + aCoefficientLen
   var
     dotplace: int
     intpart, fracpart, exp: string
@@ -346,18 +347,18 @@ proc toString(b: Decimal, eng: bool=false): string =
      dotplace = (leftdigits - 1).pyModulus(3) + 1
   if dotplace <= 0:
      intpart = "0"
-     fracpart = "." & repeat('0', -dotplace) & $a.coefficient
-  elif dotplace >= len($a.coefficient):
-     intpart = $a.coefficient & repeat('0', dotplace - len($a.coefficient))
+     fracpart = "." & repeat('0', -dotplace) & aCoefficientStr
+  elif dotplace >= aCoefficientLen:
+     intpart = aCoefficientStr & repeat('0', dotplace - aCoefficientLen)
      fracpart = ""
   else:
-     intpart = ($a.coefficient)[0..<dotplace]
-     fracpart = "." & ($a.coefficient)[dotplace..($a.coefficient).high]
+     intpart = aCoefficientStr[0..<dotplace]
+     fracpart = "." & aCoefficientStr[dotplace..aCoefficientStr.high]
   if leftdigits == dotplace:
      exp = ""
   else:
      let
-       exponentValue = (leftdigits-dotplace)
+       exponentValue = (leftdigits - dotplace)
        exponentSign = if exponentValue > 0: "+" else: ""
      exp = "E" & exponentSign & $exponentValue
   result = sign & intpart & fracpart & exp
@@ -561,49 +562,73 @@ proc pow*(a: Decimal, b: int): Decimal =
   elif b == 0:
     result = initDecimal("1")
 
-proc `==`*(a, b: Decimal): bool =
-  result = 
-    if a.sign != b.sign:
-      false
-    elif a.coefficient == bigZero and b.coefficient == bigZero:
-      true
-    elif a.special == b.special:
-      if (a.exponent == b.exponent) and (a.sign == b.sign):
-        true
+proc cmp(a, b: Decimal): int =
+  if a.coefficient == bigZero:
+      if b.coefficient == bigZero:
+        result = 0
       else:
-        false
-    elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) == 
-         initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
+        result = -((-1) ^ b.sign)
+  elif b.coefficient == bigZero:
+        result = (-1) ^ a.sign
+  elif a.sign < b.sign:
+    result = 1
+  elif a.sign > b.sign:
+    result = -1
+  elif a.special == SpecialValue.Inf or b.special == SpecialValue.Inf:
+    let
+      isInfA = a.isInfinite()
+      isInfB = b.isInfinite()
+    if isInfA == isInfB:
+      result = 0
+    elif isInfA < isInfB:
+      result = -1
+    else:
+      result = 1
+  else:
+    let
+      aAdjusted = a.adjusted()
+      bAdjusted = b.adjusted()
+    if aAdjusted == bAdjusted:
+      let
+        aPadded = a.coefficient * pow(bigTen, initBigInt(a.exponent - b.exponent))
+        bPadded = b.coefficient * pow(bigTen, initBigInt(b.exponent - a.exponent))
+      if aPadded == bPadded:
+        result = 0
+      elif aPadded < bPadded:
+        result = -((-1) ^ a.sign)
+      else:
+        result = (-1) ^ a.sign
+    elif aAdjusted > bAdjusted:
+      result = (-1) ^ a.sign
+    else:
+      result = -((-1) ^ a.sign)
+
+proc `==`*(a, b: Decimal): bool =
+  if a.special in {SpecialValue.SNaN, SpecialValue.QNaN} or 
+     b.special in {SpecialValue.SNaN, SpecialValue.QNaN}:
+    if a.special == b.special and a.sign == b.sign:
       true
     else:
       false
+  elif cmp(a, b) == 0:
+    true
+  else:
+    false
 
 proc `!=`*(a, b: Decimal): bool =
   if a == b:
-    result = false
+    false
   else:
-    result = true
+    true
 
 proc `>`*(a, b: Decimal): bool =
-  result = 
-    if a.coefficient == bigZero and b.coefficient == bigZero:
-      false
-    elif a.sign > b.sign:
-      false
-    elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) > 
-         initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      if a.sign == 1:
-        false
-      else:
-        true
-    elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) < 
-         initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      if a.sign == 1:
-        true
-      else:
-        false
-    else:
-      false
+  if a.special in {SpecialValue.SNaN, SpecialValue.QNaN} or 
+     b.special in {SpecialValue.SNaN, SpecialValue.QNaN}:
+    raise newException(InvalidOperationError, "NaN comparison not possible.")
+  elif cmp(a, b) == 1:
+    result = true
+  else:
+    result = false
 
 proc `>`*(a: Decimal, b: int): bool =
   result = a > initDecimal(b)
@@ -631,25 +656,13 @@ proc `>`*(a: BigInt, b: Decimal): bool =
   result = aDecimal > b
 
 proc `>=`*(a, b: Decimal): bool =
-  result = 
-    if a.coefficient == bigZero and b.coefficient == bigZero:
-      true
-    elif a.sign > b.sign:
-      false
-    elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) > 
-         initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      if a.sign == 1:
-        false
-      else:
-        true
-    elif initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) < 
-         initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      if a.sign == 1:
-        true
-      else:
-        false
-    else:
-      true
+  if a.special in {SpecialValue.SNaN, SpecialValue.QNaN} or 
+     b.special in {SpecialValue.SNaN, SpecialValue.QNaN}:
+    raise newException(InvalidOperationError, "NaN comparison not possible.")
+  elif cmp(a, b) != -1:
+    result = true
+  else:
+    result = false
 
 proc `>=`*(a: Decimal, b: int): bool =
   result = a >= initDecimal(b)
@@ -676,25 +689,13 @@ proc `>=`*(a: BigInt, b: Decimal): bool =
   result = initDecimal(a) >= b
 
 proc `<`*(a, b: Decimal): bool =
-  result = 
-    if a.coefficient == bigZero and b.coefficient == bigZero:
-      false
-    elif a.sign < b.sign:
-      false
-    elif initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)) > 
-         initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)):
-      if b.sign == 1:
-        false
-      else:
-        true
-    elif initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)) < 
-         initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)):
-      if b.sign == 1:
-        true
-      else:
-        false
-    else:
-      false
+  if a.special in {SpecialValue.SNaN, SpecialValue.QNaN} or 
+     b.special in {SpecialValue.SNaN, SpecialValue.QNaN}:
+    raise newException(InvalidOperationError, "NaN comparison not possible.")
+  elif cmp(a, b) == -1:
+    result = true
+  else:
+    result = false
 
 proc `<`*(a: Decimal, b: int): bool =
   result = a < initDecimal(b)
@@ -721,20 +722,13 @@ proc `<`*(a: BigInt, b: Decimal): bool =
   result = initDecimal(a) < b
 
 proc `<=`*(a, b: Decimal): bool =
-  let 
-    aCoefficient = initBigInt(a.coefficient)
-    bCoefficient = initBigInt(b.coefficient)
-  result = 
-    if a.sign < b.sign:
-      false
-    elif abs(a.exponent) > abs(b.exponent):
-      aCoefficient <= bCoefficient * 
-                      pow(bigTen, initBigInt(abs(a.exponent - b.exponent)))
-    elif abs(a.exponent) < abs(b.exponent):
-      bCoefficient >= aCoefficient * 
-                      pow(bigTen, initBigInt(abs(b.exponent - a.exponent)))
-    else:
-      aCoefficient <= bCoefficient
+  if a.special in {SpecialValue.SNaN, SpecialValue.QNaN} or 
+     b.special in {SpecialValue.SNaN, SpecialValue.QNaN}:
+    raise newException(InvalidOperationError, "NaN comparison not possible.")
+  elif cmp(a, b) != 1:
+    result = true
+  else:
+    result = false
 
 proc `<=`*(a: Decimal, b: int): bool =
   result = a <= initDecimal(b)
@@ -768,40 +762,27 @@ proc abs(a: BigInt): BigInt =
   result = a
   result.flags = {}
 
-proc compare*(a, b: Decimal): int =
-  result = 
-    if a < b: 
-      -1
-    elif a > b:
-      1
-    else:
-      0
-
 proc divideInteger*(a, b: Decimal): BigInt =
-  result = (initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent))) div 
-    (initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)))
+  (a.coefficient * pow(bigTen, initBigInt(a.exponent))) div 
+    (b.coefficient * pow(bigTen, initBigInt(b.exponent)))
     
 proc max*(a, b: Decimal): Decimal =
-  result = if a > b: a else: b
+  if a > b: a else: b
 
 proc min*(a, b: Decimal): Decimal =
-  result = if a < b: a else: b
+  if a < b: a else: b
 
 proc minMagnitude*(a, b: Decimal): Decimal =
-  result =
-    if initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) > 
-       initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      b
-    else:
-      a
+  if abs(a) > abs(b):
+    b
+  else:
+    a
 
 proc maxMagnitude*(a, b: Decimal): Decimal =
-  result =
-    if initBigInt(a.coefficient) * pow(bigTen, initBigInt(a.exponent)) > 
-       initBigInt(b.coefficient) * pow(bigTen, initBigInt(b.exponent)):
-      a
-    else:
-      b
+  if abs(a) > abs(b):
+    a
+  else:
+    b
 
 proc isLogical*(a: Decimal): bool =
   if a.sign != 0 or a.exponent != 0:
@@ -810,3 +791,4 @@ proc isLogical*(a: Decimal): bool =
     if character notin {'0','1'}:
       return false
   result = true
+  
