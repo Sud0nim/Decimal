@@ -1,15 +1,28 @@
 # Decimal
 A big/arbitrary precision Decimal class in pure Nim built off the back of the Nim BigInts package: https://github.com/def-/nim-bigints
 
-The design is inspired by the CPython implementation of Decimal and the IBM Decimal Arithmetic Specification: http://speleotrove.com/decimal/decarith.html
+The (initial) design is inspired by the CPython implementation of Decimal and the IBM Decimal Arithmetic Specification: http://speleotrove.com/decimal/decarith.html
 
-Note: for anyone wondering why this project is going through a large number of changes - while this implementation is inspired by the CPython version - I am not trying to make a drop-in copy of it, which should be easy-ish due to Nim syntax being very similar to Python syntax. Instead, as a learning exercise I am trying to work out each problem from the decimal arithmetic specification from scratch and then resort to the solution used in the Python version only if I can not solve the problem myself. This means that there might be a lot of tinkering to solve edge cases before this implementation is stabilised.
+# Plans:
+
+This library is not stable yet and is going through a some changes - therefore please use it with caution or experimentally at this point in time. That said, I plan to stabilise the API soon, then do most of the tinkering under the hood to improve performance and error handling. 
+
+Currently the major issue is that the performance isn't great due to the design of the implementation; this isn't really a problem unless the use-case is performance sensitive. As a guide, performing an arithmetic operation (such as addition or multiplication) 10000 times in a loop on a pair of large decimal numbers such as shown below currently takes around 1 second to complete:
+
+898989898989898989898989898989898989898989898989898989898989898989898989898989898989898989898989890235235235235235.2358238582835823858238528358238582385 * 
+99999999999999999999999999999923239090239023909023902903200923.2382232
+
+= 8.989898989898989898989898990E+175
+
+This performance isn't great, but having no prior experience in working with a decimal class I have chosen the easiest implementation first while I learn more about Nim and the best ways to implement a Decimal type. The idea will be to get a basic version up and running, then slowly improve the performance with (internal) changes that are not breaking for anyone using this once the API is stable.
+
+The intention is to have a pure Nim implementation and not to wrap decNumber or mpdecimal in order to get performance - though they might provide some inspiration. I'm happy to accept a PR if you have more experience in this area and can see an obvious way to improve the design.
 
 # Progress:
 
 - [ ] Settle on object design and enums
 - [x] Initialisation procs for various inputs (string, int, bigint, float)
-- [x] Basic arithmetic (plus, minus, divide, multiply)
+- [x] Basic arithmetic (add, subtract, divide, multiply)
 - [x] Number to Decimal String
 - [x] Number to Scientific String
 - [X] Number to Engineering String
