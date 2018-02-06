@@ -22,13 +22,76 @@ The intention is to have a pure Nim implementation and not to wrap decNumber or 
 
 - [ ] Settle on object design and enums
 - [x] Initialisation procs for various inputs (string, int, bigint, float)
-- [x] Basic arithmetic (add, subtract, divide, multiply)
 - [x] Number to Decimal String
 - [x] Number to Scientific String
 - [X] Number to Engineering String
 - [x] Boolean operators
 - [ ] Create the remainder of required procedures shown in http://speleotrove.com/decimal/daops.html
+    - [x] abs
+    - [x] add and subtract
+    - [x] compare
+    - [ ] compare-signal
+    - [x] divide
+    - [x] divide-integer
+    - [ ] exp
+    - [ ] fused-multiply-add
+    - [ ] ln
+    - [ ] log10
+    - [x] max
+    - [x] max-magnitude
+    - [x] min
+    - [x] min-magnitude
+    - [x] minus and plus
+    - [x] multiply
+    - [ ] next-minus
+    - [ ] next-plus
+    - [ ] next-toward
+    - [ ] power
+    - [ ] quantize
+    - [x] reduce
+    - [ ] remainder
+    - [ ] remainder-near
+    - [ ] round-to-integral-exact
+    - [ ] round-to-integral-value
+    - [ ] square-root
+- [ ] Miscellaneous operations
+    - [ ] and
+    - [ ] canonical
+    - [ ] class
+    - [ ] compare-total
+    - [ ] compare-total-magnitude
+    - [ ] copy
+    - [ ] copy-abs
+    - [ ] copy-negate
+    - [ ] copy-sign
+    - [ ] invert
+    - [ ] is-canonical
+    - [ ] is-finite
+    - [ ] is-infinite
+    - [ ] is-NaN
+    - [ ] is-normal
+    - [ ] is-qNaN
+    - [ ] is-signed
+    - [ ] is-sNaN
+    - [ ] is-subnormal
+    - [ ] is-zero
+    - [ ] logb
+    - [ ] or
+    - [ ] radix
+    - [ ] rotate
+    - [ ] same-quantum
+    - [ ] scaleb
+    - [ ] shift
+    - [ ] xor
 - [x] Add all major rounding rules
+    - [x] round down 
+    - [x] round half up
+    - [x] round half even
+    - [x] round ceiling
+    - [x] round floor 
+    - [x] round half down
+    - [x] round up
+    - [x] round 05 up
 - [ ] Add context object for precision and rounding
 - [ ] Ensure a reasonable level of error handling
 - [ ] Create extensive test suite
