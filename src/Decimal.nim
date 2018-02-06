@@ -242,10 +242,10 @@ proc toNumber(input: string): Decimal =
     elif character == '.':
       if dotCount > 0:
         raise newException(ConversionSyntaxError, "Too many decimal places.")
-      result.exponent = index - len(input[start..input.high]) + 1#digits.len + 1
+      result.exponent = index - len(input[start..input.high]) + 1
       dotCount += 1
     elif character in {'e', 'E'}:
-  # `parseInt` should handle further input errors, so try and raise conversion syntax on fail.
+  # `parseInt` handles further input errors
       try:
         var 
           shift = start + index
@@ -266,7 +266,7 @@ proc toNumber(input: string): Decimal =
       elif input[start..<(4 + start)].toLowerAscii() == "snan":
         result = decSNAN
       else:
-        raise newException(ConversionSyntaxError, "conversionsyntax etc...")
+        raise newException(ConversionSyntaxError, "Invalid numerical string format.")
       result.sign = sign
       return result
   # `initBigInt` handles leading zeros, so no need to double up.
@@ -438,11 +438,14 @@ proc normalise(a, b: Decimal, precision: int): tuple[a, b: Decimal] =
   else:
     result = (dec1, dec2)
 
-proc `*`*(a, b: Decimal): Decimal =
+proc multiply(a, b: Decimal): Decimal =
   result.exponent = a.exponent + b.exponent
   result.sign = a.sign xor b.sign
   result.coefficient = a.coefficient * b.coefficient
   result.round(context.rounding, context.precision)
+
+proc `*`*(a, b: Decimal): Decimal =
+  result = a.multiply(b)
 
 proc `*`*(a: Decimal, b: int): Decimal =
   result = a * initDecimal(b)
@@ -462,7 +465,7 @@ proc `*`*(a: Decimal, b: BigInt): Decimal =
 proc `*`*(a: BigInt, b: Decimal): Decimal =
   result = initDecimal(a) * b
 
-proc `/`*(a, b: Decimal): Decimal =
+proc divide(a, b: Decimal): Decimal =
   var
     quotient, remainder: BigInt
     shift = ($b.coefficient).len - ($a.coefficient).len + context.precision + 1
@@ -483,6 +486,9 @@ proc `/`*(a, b: Decimal): Decimal =
   result.exponent = a.exponent - b.exponent - shift
   result.round(context.rounding, context.precision)
 
+proc `/`*(a, b: Decimal): Decimal =
+  result = a.divide(b)
+
 proc `/`*(a: Decimal, b: int): Decimal =
   result = a / initDecimal(b)
 
@@ -501,7 +507,7 @@ proc `/`*(a: Decimal, b: BigInt): Decimal =
 proc `/`*(a: BigInt, b: Decimal): Decimal =
   result = initDecimal(a) / b
 
-proc `+`*(a, b: Decimal): Decimal =
+proc add(a, b: Decimal): Decimal =
   var (aNormalised, bNormalised) = normalise(a, b, context.precision)
   if aNormalised.sign != bNormalised.sign:
     if aNormalised.coefficient == bNormalised.coefficient:
@@ -527,6 +533,9 @@ proc `+`*(a, b: Decimal): Decimal =
   result.exponent = aNormalised.exponent
   result.round(context.rounding, context.precision)
 
+proc `+`*(a, b: Decimal): Decimal =
+  result = a.add(b)
+
 proc `+`*(a: Decimal, b: int): Decimal =
   result = a + initDecimal(b)
 
@@ -545,7 +554,7 @@ proc `+`*(a: Decimal, b: BigInt): Decimal =
 proc `+`*(a: BigInt, b: Decimal): Decimal =
   result = initDecimal(a) + b
 
-proc `-`*(a, b: Decimal): Decimal =
+proc subtract(a, b: Decimal): Decimal =
   var b = b
   if b.sign == 0:
     b.sign = 1
@@ -553,6 +562,9 @@ proc `-`*(a, b: Decimal): Decimal =
     b.sign = 0
   result = a + b
   result.round(context.rounding, context.precision)
+
+proc `-`*(a, b: Decimal): Decimal =
+  result = a.subtract(b)
 
 proc `-`*(a: Decimal, b: int): Decimal =
   result = a - initDecimal(b)
