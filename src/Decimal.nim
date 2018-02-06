@@ -831,7 +831,25 @@ proc maxMagnitude*(a, b: Decimal): Decimal =
     a
   else:
     b
-  
+
+proc plus*(a: Decimal): Decimal =
+  if a.coefficient == bigZero and context.rounding != Rounding.Floor:
+    result = abs(a)
+  else:
+    result = a
+  result.round(context.rounding, context.precision)
+
+proc minus*(a: Decimal): Decimal =
+  if a.coefficient == bigZero and context.rounding != Rounding.Floor:
+    result = abs(a)
+  else:
+    result = a
+    result.sign = [1, 0][a.sign]
+  result.round(context.rounding, context.precision)
+
+proc `-`*(a: Decimal): Decimal =
+  result = minus(a)
+
 when isMainModule:
   import unittest
 
