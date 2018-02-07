@@ -34,7 +34,7 @@ The intention is to have a pure Nim implementation and not to wrap decNumber or 
     - [x] divide
     - [x] divide-integer
     - [ ] exp
-    - [ ] fused-multiply-add
+    - [x] fused-multiply-add
     - [ ] ln
     - [ ] log10
     - [x] max
