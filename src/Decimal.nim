@@ -111,13 +111,13 @@ proc allZeros(numericalString: string, precision: int): bool =
   for character in numericalString[precision..numericalString.high]:
     if character != '0':
       return false
-  true
+  result = true
 
 proc allNines(numericalString: string, precision: int): bool =
   for character in numericalString[precision..numericalString.high]:
     if character != '9':
       return false
-  true
+  result = true
 
 proc exactHalf(numericalString: string, precision: int): bool =
   if numericalString[precision] != '5':
@@ -125,7 +125,7 @@ proc exactHalf(numericalString: string, precision: int): bool =
   for character in numericalString[precision + 1..numericalString.high]:
     if character != '0':
       return false
-  true
+  result = true
 
 proc stripLeadingZeros(digits: string): string =
   ## Returns a copy of the input string with any
@@ -137,7 +137,7 @@ proc stripLeadingZeros(digits: string): string =
       break
     else:
       zeros += 1
-  digits[zeros..digits.high]
+  result = digits[zeros..digits.high]
 
 proc initDecimal(coefficient: BigInt, sign, exponent: int, special: SpecialValue): Decimal =
   ## Returns an instance of a Decimal with all fields of the instance populated 
@@ -160,43 +160,42 @@ proc initDecimal*(coefficient: BigInt): Decimal =
   result.special = SpecialValue.None
 
 proc adjusted(a: Decimal): int =
-  a.exponent + len($a.coefficient) - 1
+  result = a.exponent + len($a.coefficient) - 1
 
 proc isInfinite*(a: Decimal): int =
   if a.special == SpecialValue.Inf:
     if a.sign == 1:
-      -1
+      result = -1
     else:
-      1
+      result = 1
   else:
-    0
+    result = 0
 
 proc isNan*(a: Decimal): int =
-  if a.special == SpecialValue.SNaN or a.special == SpecialValue.QNaN:
-    if a.sign == 1:
-      -1
-    else:
-      1
+  if a.special == SpecialValue.QNaN:
+    result =  1
+  elif a.special == SpecialValue.SNaN:
+    result =  2
   else:
-    0
+    result = 0
 
 proc isQnan*(a: Decimal): int =
   if a.special == SpecialValue.QNaN:
     if a.sign == 1:
-      -1
+      result = -1
     else:
-      1
+      result = 1
   else:
-    0
+    result = 0
 
 proc isSnan*(a: Decimal): int =
   if a.special == SpecialValue.SNaN:
     if a.sign == 1:
-      -1
+      result = -1
     else:
-      1
+      result = 1
   else:
-    0
+    result = 0
 
 proc isLogical*(a: Decimal): bool =
   if a.sign != 0 or a.exponent != 0:
@@ -205,6 +204,12 @@ proc isLogical*(a: Decimal): bool =
     if character notin {'0','1'}:
       return false
   result = true
+
+proc isSpecial*(a: Decimal): bool =
+  if a.special == SpecialValue.None:
+    result = false
+  else:
+    result = true
 
 proc toNumber(input: string): Decimal =
   ## Takes a string as an input and attempts to parse
@@ -368,7 +373,7 @@ proc toString(b: Decimal, eng: bool = false): string =
   var a = b
   a.reduce
   let sign = ["", "-"][a.sign]
-  if a.special != SpecialValue.None:
+  if a.isSpecial():
     return sign & $a.special
   let 
     aCoefficientStr = $a.coefficient
@@ -849,6 +854,12 @@ proc minus*(a: Decimal): Decimal =
 
 proc `-`*(a: Decimal): Decimal =
   result = minus(a)
+
+proc fusedMultiplyAdd*(a, b, c: Decimal): Decimal =
+  result.exponent = a.exponent + b.exponent
+  result.sign = a.sign xor b.sign
+  result.coefficient = a.coefficient * b.coefficient
+  result = result.add(c)
 
 when isMainModule:
   import unittest
