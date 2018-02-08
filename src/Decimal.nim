@@ -30,9 +30,9 @@ type
     coefficient: BigInt
     special: SpecialValue
   Context* = object
-    precision: int
+    precision, capitals, clamp, emin, emax: int
     rounding: Rounding
-    flags, traps: set[Signal]
+    traps, flags: set[Signal]
   ClampedError* = object of Exception
   InvalidOperationError* = object of Exception
   ConversionSyntaxError* = object of Exception
